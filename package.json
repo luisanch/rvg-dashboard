@@ -1,5 +1,5 @@
 {
-  "name": "rvg-dashboard", 
+  "name": "rvg-dashboard",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -16,7 +16,7 @@
     "react-router-dom": "^6.3.0",
     "react-scripts": "5.0.1",
     "react-use-websocket": "^4.2.0",
-    "socket.io-client": "^4.5.4",
+    "recharts": "^2.4.0",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
