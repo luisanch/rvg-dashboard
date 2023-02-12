@@ -58,7 +58,7 @@ function App() {
       <Sidenav />
       <main>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home data={messageHistory[messageHistory.length - 1]} />} />
           <Route path="/explore" element={<Explore />} />
           <Route
             path="/statistics"
