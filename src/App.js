@@ -14,6 +14,9 @@ function App() {
   const [socketUrl, setSocketUrl] = useState(WS_URL);
   const [messageHistory, setMessageHistory] = useState([]);
 
+  let filters = ["$GPGBS_ext", "$PSIMSNS_ext"];
+  const maxBufferLength = 100;
+
   const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {
     share: true,
     filter: isDataIn,
@@ -26,18 +29,27 @@ function App() {
 
   useEffect(() => {
     if (lastMessage !== null) {
-      setMessageHistory((prev) =>
-        prev.concat(parseDataIn(JSON.parse(lastMessage.data).data))
-      );
+      setMessageHistory((prev) => {
+        let newMsg = parseDataIn(lastMessage.data)
+        let history = newMsg == null ? prev : prev.concat(newMsg);
+        if (history.length > maxBufferLength) {
+          return history.slice(1)
+        } else {
+          return history
+        }
+      });
       console.log(JSON.stringify(messageHistory, null, 2));
     }
   }, [lastMessage, setMessageHistory]);
 
   function parseDataIn(msgString) {
-    const [xpos, ypos, zpos, pitch, yaw, roll] = msgString
-      .split(",")
-      .map((element) => Number(element));
-    return { xpos, ypos, zpos, pitch, yaw, roll };
+     const msg = JSON.parse(msgString).data;
+    console.log(msg.message_id);
+    if (filters.includes(msg.message_id)) {
+      return msg;
+    } else {
+      return null;
+    }
   }
 
   const connectionStatus = {
