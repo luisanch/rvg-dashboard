@@ -1,32 +1,32 @@
-import React from "react";
-import LinePlot from "../Components/plots/LinePlot";
-import { Grid } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import GpsPlot from "../Components/plots/GpsPlot";
+import AttitudePlot from "../Components/plots/AttitudePlot";
 
-const data = [
-];
+let gpsData = [];
+let attitudeData = [];
 
-const lines = [{
-  type:"monotone",
-  dataKey:"pv",
-  stroke:"#8884d8",
-},
-  { type:"monotone", dataKey:"uv", stroke:"#82ca9d" }]
+export default function Statistics(props) {
+  const maxBufferLength = props.maxBufferLength;
+  let data = props.data;
 
-export default function Statistics() {
+  useEffect(() => {
+    if (!data) return;
+    if (data.message_id === "$GPGGA_ext") {
+      gpsData = gpsData.concat(data);
+      if (gpsData.length > maxBufferLength) gpsData = gpsData.slice(1);
+    }
+
+    if (data.message_id === "$PSIMSNS_ext") {
+      attitudeData = attitudeData.concat(data);
+      if (attitudeData.length > maxBufferLength)
+        attitudeData = attitudeData.slice(1);
+    }
+  }, [data, maxBufferLength]);
+
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={4}>
-        <LinePlot data={data}/>
-      </Grid>
-      <Grid item xs={4}>
-        <LinePlot data={data} />
-      </Grid>
-      <Grid item xs={4}>
-        <LinePlot data={data} />
-      </Grid>
-      <Grid item xs={4}>
-        <LinePlot data={data} />
-      </Grid>
-    </Grid>
+    <div>
+      <GpsPlot data={gpsData} />
+      <AttitudePlot data={attitudeData} />
+    </div>
   );
 }

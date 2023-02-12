@@ -9,15 +9,13 @@ import useWebSocket, { ReadyState } from "react-use-websocket";
 import React, { useState, useCallback, useEffect } from "react";
 
 const WS_URL = "ws://127.0.0.1:8000";
+let messageHistory = [];
 
 function App() {
-  const [socketUrl, setSocketUrl] = useState(WS_URL);
-  const [messageHistory, setMessageHistory] = useState([]);
+  const filters = ["$GPGGA_ext", "$PSIMSNS_ext"];
+  const maxBufferLength = 60;
 
-  let filters = ["$GPGBS_ext", "$PSIMSNS_ext"];
-  const maxBufferLength = 100;
-
-  const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {
+  const { sendMessage, lastMessage, readyState } = useWebSocket(WS_URL, {
     share: true,
     filter: isDataIn,
   });
@@ -29,22 +27,17 @@ function App() {
 
   useEffect(() => {
     if (lastMessage !== null) {
-      setMessageHistory((prev) => {
-        let newMsg = parseDataIn(lastMessage.data)
-        let history = newMsg == null ? prev : prev.concat(newMsg);
-        if (history.length > maxBufferLength) {
-          return history.slice(1)
-        } else {
-          return history
-        }
-      });
-      console.log(JSON.stringify(messageHistory, null, 2));
+      let newMsg = parseDataIn(lastMessage.data);
+      if (newMsg === null) return;
+      messageHistory.push(newMsg);
+      if (messageHistory.length > maxBufferLength) {
+        messageHistory.shift();
+      }
     }
-  }, [lastMessage, setMessageHistory]);
+  }, [lastMessage, messageHistory]);
 
   function parseDataIn(msgString) {
-     const msg = JSON.parse(msgString).data;
-    console.log(msg.message_id);
+    const msg = JSON.parse(msgString).data;
     if (filters.includes(msg.message_id)) {
       return msg;
     } else {
@@ -67,7 +60,15 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/explore" element={<Explore />} />
-          <Route path="/statistics" element={<Statistics />} />
+          <Route
+            path="/statistics"
+            element={
+              <Statistics
+                data={messageHistory[messageHistory.length - 1]}
+                maxBufferLength={maxBufferLength}
+              />
+            }
+          />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </main>

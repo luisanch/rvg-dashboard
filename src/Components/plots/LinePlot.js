@@ -1,4 +1,4 @@
-import React from "react";  
+import React from "react";
 import {
   LineChart,
   Line,
@@ -11,13 +11,15 @@ import {
 } from "recharts";
 
 const LinePlot = (props) => {
-  const data = props.data; 
+  const data = props.data;
+  const dataKey = props.dataKey;
+
   return (
-    <div>
+    <ResponsiveContainer width={600} height="100%" data={data}>
       <LineChart
+        data={data}
         width={500}
         height={300}
-        data={data}
         margin={{
           top: 5,
           right: 30,
@@ -26,19 +28,13 @@ const LinePlot = (props) => {
         }}
       >
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
+        <XAxis dataKey="timestamp" angle={45} y={10} />
+        <YAxis type="number" domain={["dataMin", "dataMax"]} />
         <Tooltip />
-        <Legend /> 
-          <Line
-            type="monotone"
-            dataKey="pv"
-            stroke="#8884d8"
-            activeDot={{ r: 8 }}
-          />
-          <Line type="monotone" dataKey="uv" stroke="#82ca9d" /> 
+        <Legend />
+        <Line type="monotone" dataKey={dataKey} stroke="#8884d8" />
       </LineChart>
-    </div>
+    </ResponsiveContainer>
   );
 };
 
