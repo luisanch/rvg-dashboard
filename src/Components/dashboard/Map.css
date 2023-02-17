@@ -1,5 +1,11 @@
 .map { 
   background-color: black;
-  height: 90vh;
-  width: 100vw;
+  height: 100vh;
+  width: 100vw; 
+}
+
+.overlay{
+  width:32px;
+  height:88px;
+  alt:"";
 }

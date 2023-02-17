@@ -12,7 +12,8 @@ const WS_URL = "ws://127.0.0.1:8000";
 let messageHistory = [];
 
 function App() {
-  const filters = ["$GPGGA_ext", "$PSIMSNS_ext"];
+  const nmeaFilters = ["$GPGGA_ext", "$PSIMSNS_ext"];
+  const aisFilter =  "!AI"
   const maxBufferLength = 60;
 
   const { sendMessage, lastMessage, readyState } = useWebSocket(WS_URL, {
@@ -38,7 +39,7 @@ function App() {
 
   function parseDataIn(msgString) {
     const msg = JSON.parse(msgString).data;
-    if (filters.includes(msg.message_id)) {
+    if (nmeaFilters.includes(msg.message_id) || (msg.message_id.includes(aisFilter) && msg.message_id.includes("_ext"))) { 
       return msg;
     } else {
       return null;
