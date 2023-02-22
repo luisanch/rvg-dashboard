@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Map, Marker, Overlay } from "pigeon-maps";
+import { Map, Marker, Overlay, GeoJson, Draggable } from "pigeon-maps";
 import "./Map.css";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
 import boat from "../../Assets/ships/boat.svg";
@@ -14,6 +14,8 @@ const MyMap = (props) => {
   const [mapCenter, setMapCenter] = useState([63.43463, 10.39744]);
   const [gunnerusHeading, setGunnerusHeading] = useState(0);
   const [aisData, setAisData] = useState([]);
+  const [anchor, setAnchor] = useState([63.43463, 10.39744]);
+  const [tipText, setTipText] = useState("")
 
   function deg2dec(coord, direction) {
     let dir = 1;
@@ -41,7 +43,7 @@ const MyMap = (props) => {
     }
 
     if (data.message_id.indexOf("!AI") === 0) {
-      aisObject[data.message_id] = data;
+      aisObject[data.message_id] = data; 
     }
   }, [data, setMapCenter, setGunnerusHeading]);
 
@@ -58,30 +60,90 @@ const MyMap = (props) => {
     };
   }, []);
 
-  const listMarkers = aisData.map((ais) => (
-    <Marker
-      key={ais.mmsi}
-      color="green"
-      width={markerSize}
-      anchor={[Number(ais.lat), Number(ais.lon)]}
-    />
-  ));
+  const listMarkers = aisData.map((ais) => {
+    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return;
 
-  const listOverlays = aisData.map((ais) => (
-    <Overlay key={'1'+String(ais.mmsi)}  anchor={[Number(ais.lat), Number(ais.lon)]} offset={[16, 44]}>
-      <img className="overlay" src={boat} style={{ transform: `rotate(${ais.heading}deg)` }}/>
-    </Overlay>
-  ));
+    return (
+      <Marker
+        key={ais.mmsi}
+        color="green"
+        width={markerSize}
+        onClick = {()=> setTipText(JSON.stringify(ais,null,2))}
+        anchor={[Number(ais.lat), Number(ais.lon)]}
+      />
+    );
+  });
+
+  const listOverlays = aisData.map((ais) => {
+    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return;
+
+    return (
+      <Overlay
+        key={"1" + String(ais.mmsi)}
+        anchor={[Number(ais.lat), Number(ais.lon)]}
+        offset={[16, 44]}
+      >
+        <img
+          className="overlay"
+          src={boat}
+          style={{ transform: `rotate(${ais.heading}deg)` }}
+        />
+      </Overlay>
+    );
+  });
+
+  const listPreviousPaths = aisData.map((ais) => {
+    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return;
+
+    const geoJsonSample = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates: ais.pos_history,
+          },
+          properties: { prop0: "value0" },
+        },
+      ],
+    };
+
+    // console.log(geoJsonSample.features[0].geometry.coordinates)
+
+    return (
+      <GeoJson
+        key={"2" + String(ais.mmsi)}
+        data={geoJsonSample}
+        styleCallback={(feature, hover) => {
+          return {
+            fill: "#d4e6ec99",
+            strokeWidth: "1",
+            stroke: "white",
+            r: "20",
+          };
+        }}
+      />
+    );
+  });
 
   return (
     <div className="map">
       <Map defaultCenter={mapCenter} defaultZoom={15} center={mapCenter}>
-      {listOverlays}
-      {listMarkers}
+        {listOverlays}
+        {listMarkers}
+        {listPreviousPaths}
         <Overlay anchor={mapCenter} offset={[16, 44]}>
-          <img className="overlay" src={gunnerus} style={{ transform: `rotate(${gunnerusHeading}deg)` }} />
+          <img
+            className="overlay"
+            src={gunnerus}
+            style={{ transform: `rotate(${gunnerusHeading}deg)` }}
+          />
         </Overlay>
         <Marker key={0} color="red" width={markerSize} anchor={mapCenter} />
+        <Draggable  offset={[60, 87]} anchor={anchor} onDragEnd={setAnchor}>
+          <p className="block">{tipText}</p>
+        </Draggable>
       </Map>
     </div>
   );

@@ -9,3 +9,11 @@
   height:88px;
   alt:"";
 }
+
+.block{
+  width: 400px;
+  height: 800px;
+  padding: 10px;
+  border: 5px solid black;
+  margin: 0;
+}
