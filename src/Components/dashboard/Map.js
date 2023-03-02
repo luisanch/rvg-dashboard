@@ -17,6 +17,7 @@ const MyMap = (props) => {
   const [aisData, setAisData] = useState([]);
   const [anchor, setAnchor] = useState([63.43463, 10.39744]);
   const [tipText, setTipText] = useState("");
+  const [intersects, setintersects] = useState([])
 
   function deg2dec(coord, direction) {
     let dir = 1;
@@ -45,6 +46,11 @@ const MyMap = (props) => {
 
     if (data.message_id.indexOf("!AI") === 0) {
       aisObject[data.message_id] = data;
+    }
+
+    if (data.message_id.indexOf("intersects") === 0) {
+      console.log(JSON.stringify(data.intersects, null, 2))
+      setintersects(data.intersects);
     }
   }, [data, setMapCenter, setGunnerusHeading]);
 
@@ -130,7 +136,7 @@ const MyMap = (props) => {
       ],
     };
 
-    // console.log(geoJsonSample.features[0].geometry.coordinates)
+    // console.log(JSON.stringify(geoJsonSample.features[0].geometry.coordinates, null, 2))
 
     return (
       <GeoJson
@@ -138,9 +144,43 @@ const MyMap = (props) => {
         data={geoJsonSample}
         styleCallback={(feature, hover) => {
           return {
-            fill: "#d4e6ec99",
-            strokeWidth: "1",
-            stroke: "white",
+            fill: "#00000000",
+            strokeWidth: "2",
+            stroke: "blue",
+            r: "20",
+          };
+        }}
+      />
+    );
+  });
+
+  const listintesects = intersects.map((intersect) => { 
+
+    const geoJsonSample = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates: [intersect.origin, intersect.target],
+          },
+          properties: { prop0: "value0" },
+        },
+      ],
+    };
+
+  //  console.log(JSON.stringify(geoJsonSample.features[0].geometry.coordinates, null, 2))
+
+    return (
+      <GeoJson
+        key={"4" + String(intersect.mmsi)}
+        data={geoJsonSample}
+        styleCallback={(feature, hover) => {
+          return {
+            fill: "#00000000",
+            strokeWidth: "2",
+            stroke: "red",
             r: "20",
           };
         }}
@@ -155,6 +195,7 @@ const MyMap = (props) => {
         {listOverlays}
         {listMarkers}
         {listPreviousPaths}
+        {listintesects}
         <Overlay anchor={mapCenter} offset={[16, 44]}>
           <img
             className="overlay"

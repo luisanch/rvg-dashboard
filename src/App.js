@@ -13,7 +13,8 @@ let messageHistory = [];
 
 function App() {
   const nmeaFilters = ["$GPGGA_ext", "$PSIMSNS_ext"];
-  const aisFilter =  "!AI"
+  const aisFilter = "!AI"
+  const colavFilter = "intersects"
   const maxBufferLength = 60;
 
   const { sendMessage, lastMessage, readyState } = useWebSocket(WS_URL, {
@@ -39,7 +40,9 @@ function App() {
 
   function parseDataIn(msgString) {
     const msg = JSON.parse(msgString).data;
-    if (nmeaFilters.includes(msg.message_id) || (msg.message_id.includes(aisFilter) && msg.message_id.includes("_ext"))) { 
+    if (nmeaFilters.includes(msg.message_id) ||
+      (msg.message_id.includes(aisFilter) && msg.message_id.includes("_ext"))
+    || msg.message_id.includes(colavFilter)) { 
       return msg;
     } else {
       return null;
