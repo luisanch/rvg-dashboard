@@ -13,9 +13,13 @@ let messageHistory = [];
 
 function App() {
   const nmeaFilters = ["$GPGGA_ext", "$PSIMSNS_ext"];
-  const aisFilter = "!AI"
-  const colavFilter = "intersects"
+  const aisFilter = "!AI";
+  const colavFilter = "intersects";
   const maxBufferLength = 60;
+  const [settings, setSettings] = useState({
+    showHitbox: true,
+    showDebugOverlay: false,
+  });
 
   const { sendMessage, lastMessage, readyState } = useWebSocket(WS_URL, {
     share: true,
@@ -40,9 +44,11 @@ function App() {
 
   function parseDataIn(msgString) {
     const msg = JSON.parse(msgString).data;
-    if (nmeaFilters.includes(msg.message_id) ||
-      (msg.message_id.includes(aisFilter) && msg.message_id.includes("_ext"))
-    || msg.message_id.includes(colavFilter)) { 
+    if (
+      nmeaFilters.includes(msg.message_id) ||
+      (msg.message_id.includes(aisFilter) && msg.message_id.includes("_ext")) ||
+      msg.message_id.includes(colavFilter)
+    ) {
       return msg;
     } else {
       return null;
@@ -62,7 +68,10 @@ function App() {
       <Sidenav />
       <main>
         <Routes>
-          <Route path="/" element={<Home data={messageHistory[messageHistory.length - 1]} />} />
+          <Route
+            path="/"
+            element={<Home settings={settings} data={messageHistory[messageHistory.length - 1]} />}
+          />
           <Route path="/explore" element={<Explore />} />
           <Route
             path="/statistics"
@@ -73,7 +82,7 @@ function App() {
               />
             }
           />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings" element={<Settings settings={settings} setSettings={setSettings} />} />
         </Routes>
       </main>
     </div>

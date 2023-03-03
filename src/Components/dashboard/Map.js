@@ -1,23 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { Map, Marker, Overlay, GeoJson, Draggable } from "pigeon-maps";
 import "./Map.css";
+import DebugOverlay from "./DebugOverlay";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
 import boat from "../../Assets/ships/boat.svg";
-import course from "../../Assets/ships/course.svg";
-import Markers from "./Markers";
+import course from "../../Assets/ships/course.svg"; 
 
 const aisObject = {};
 
 const MyMap = (props) => {
   const data = props.data;
   const markerSize = 20;
+  const settings = props.settings;
 
   const [mapCenter, setMapCenter] = useState([63.43463, 10.39744]);
   const [gunnerusHeading, setGunnerusHeading] = useState(0);
   const [aisData, setAisData] = useState([]);
   const [anchor, setAnchor] = useState([63.43463, 10.39744]);
   const [tipText, setTipText] = useState("");
-  const [intersects, setintersects] = useState([])
+  const [intersects, setintersects] = useState([]);
 
   function deg2dec(coord, direction) {
     let dir = 1;
@@ -30,14 +31,13 @@ const MyMap = (props) => {
   useEffect(() => {
     if (!data) return;
     if (data.message_id === "$GPGGA_ext") {
-      setMapCenter(() => {
-        const lon = data.lon;
-        const lon_dir = data.lon_dir;
-        const lat = data.lat;
-        const lat_dir = data.lat_dir;
-        const res = [deg2dec(lat, lat_dir), deg2dec(lon, lon_dir)];
-        return res;
-      });
+      const lon = data.lon;
+      const lon_dir = data.lon_dir;
+      const lat = data.lat;
+      const lat_dir = data.lat_dir;
+      const res = [deg2dec(lat, lat_dir), deg2dec(lon, lon_dir)];
+      setMapCenter(res);
+      setAnchor(res);
     }
 
     if (data.message_id === "$PSIMSNS_ext") {
@@ -49,7 +49,7 @@ const MyMap = (props) => {
     }
 
     if (data.message_id.indexOf("intersects") === 0) {
-      console.log(JSON.stringify(data.intersects, null, 2))
+      console.log(JSON.stringify(data.intersects, null, 2));
       setintersects(data.intersects);
     }
   }, [data, setMapCenter, setGunnerusHeading]);
@@ -100,9 +100,14 @@ const MyMap = (props) => {
   });
 
   const listCourses = aisData.map((ais) => {
-    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))
-      || ais.speed === 0 || !ais.hasOwnProperty('course')
-      || !ais.hasOwnProperty('speed')) return null;
+    if (
+      isNaN(Number(ais.lat)) ||
+      isNaN(Number(ais.lon)) ||
+      ais.speed === 0 ||
+      !ais.hasOwnProperty("course") ||
+      !ais.hasOwnProperty("speed")
+    )
+      return null;
 
     return (
       <Overlay
@@ -154,8 +159,8 @@ const MyMap = (props) => {
     );
   });
 
-  const listintesects = intersects.map((intersect) => { 
-
+  const listintesects = intersects.map((intersect) => {
+    if (!settings.showHitbox) return null;
     const geoJsonSample = {
       type: "FeatureCollection",
       features: [
@@ -163,14 +168,20 @@ const MyMap = (props) => {
           type: "Feature",
           geometry: {
             type: "LineString",
-            coordinates: [intersect.origin, intersect.target],
+            coordinates: [
+              intersect.originL,
+              intersect.targetL,
+              intersect.targetR,
+              intersect.originR,
+              intersect.originL,
+            ],
           },
           properties: { prop0: "value0" },
         },
       ],
     };
 
-  //  console.log(JSON.stringify(geoJsonSample.features[0].geometry.coordinates, null, 2))
+    //  console.log(JSON.stringify(geoJsonSample.features[0].geometry.coordinates, null, 2))
 
     return (
       <GeoJson
@@ -188,6 +199,12 @@ const MyMap = (props) => {
     );
   });
 
+  const draggable = settings.showDebugOverlay ? (
+    <Draggable offset={[60, 87]} anchor={anchor} onDragEnd={setAnchor}>
+      <p className="block">{tipText}</p>
+    </Draggable>
+  ) : null;
+
   return (
     <div className="map">
       <Map defaultCenter={mapCenter} defaultZoom={15} center={mapCenter}>
@@ -204,9 +221,7 @@ const MyMap = (props) => {
           />
         </Overlay>
         <Marker key={0} color="red" width={markerSize} anchor={mapCenter} />
-        <Draggable offset={[60, 87]} anchor={anchor} onDragEnd={setAnchor}>
-          <p className="block">{tipText}</p>
-        </Draggable>
+        {draggable}
       </Map>
     </div>
   );
