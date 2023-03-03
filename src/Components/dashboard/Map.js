@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Map, Marker, Overlay, GeoJson, Draggable } from "pigeon-maps";
-import "./Map.css";
-import DebugOverlay from "./DebugOverlay";
+import "./Map.css"; 
 import gunnerus from "../../Assets/ships/gunnerus.svg";
 import boat from "../../Assets/ships/boat.svg";
 import course from "../../Assets/ships/course.svg"; 
