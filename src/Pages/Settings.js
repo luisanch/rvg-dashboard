@@ -21,7 +21,7 @@ export default function Settings(props) {
   }
   return (
     <FormGroup>
-      <FormControlLabel control={<Checkbox checked={settings.showHitbox} onChange={handleChangeHitbox} />} label="Show Collission Boxes" />
+      <FormControlLabel control={<Checkbox checked={settings.showHitbox} onChange={handleChangeHitbox} />} label="Show ARPA data" />
       <FormControlLabel control={<Checkbox checked={settings.showDebugOverlay} onChange={handleChangeOverlay}/>} label="Show Debug Overlay" />
     </FormGroup>
   );

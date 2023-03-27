@@ -18,6 +18,13 @@ const MyMap = (props) => {
   const [anchor, setAnchor] = useState([63.43463, 10.39744]);
   const [tipText, setTipText] = useState("");
   const [arpaObject, setArpaObject] = useState([]);
+  const [zoomScale, setZoomScale] = useState(1);
+
+  const handleZoomLevel = (event) => {  
+    const scale = (event.zoom/18)
+    console.log(scale)
+    setZoomScale(scale)
+  }
 
   function deg2dec(coord, direction) {
     let dir = 1;
@@ -111,6 +118,14 @@ const MyMap = (props) => {
   const listOverlays = aisData.map((ais) => {
     if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return null;
 
+    function rotate_heaidng(ais_in) {
+      if (ais_in.heading) {
+        return ais_in.heading
+      } else { 
+        return 0
+      }
+     }
+
     return (
       <Overlay
         key={"1" + String(ais.mmsi)}
@@ -120,7 +135,7 @@ const MyMap = (props) => {
         <img
           className="overlay"
           src={boat}
-          style={{ transform: `rotate(${ais.heading}deg)` }}
+          style={{ transform: `scale(${zoomScale}) rotate(${rotate_heaidng(ais)}deg) ` }}
         />
       </Overlay>
     );
@@ -145,7 +160,7 @@ const MyMap = (props) => {
         <img
           className="course"
           src={course}
-          style={{ transform: `rotate(${ais.course}deg)` }}
+          style={{ transform: `rotate(${ais.course}deg))` }}
         />
       </Overlay>
     );
@@ -204,6 +219,37 @@ const MyMap = (props) => {
       ],
     };
 
+    const geoJsonSample3 = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates: [
+              [anchor[1], anchor[0]],
+              [arpa.lon_at_cpa, arpa.lat_at_cpa], 
+            ],
+          },
+          properties: { prop0: "value0" },
+        },
+      ],
+    };
+
+    let c = ( <GeoJson
+      key={"3" + index}
+      data={geoJsonSample3}
+      styleCallback={(feature, hover) => {
+        return {
+          fill: "#00000000",
+          strokeWidth: "2",
+          opacity: 0.2,
+          stroke: "red",
+          r: "20",
+        };
+      }}
+    />) 
+
     let a = ( <GeoJson
       key={"0" + index}
       data={geoJsonSample}
@@ -212,7 +258,7 @@ const MyMap = (props) => {
           fill: "#00000000",
           strokeWidth: "2",
           opacity: 0.2,
-          stroke: "blue",
+          stroke: "red",
           r: "20",
         };
       }}
@@ -247,24 +293,24 @@ const MyMap = (props) => {
           };
         }} />)
       
-        return ( [a, b] );
+        return ( [a, b, c] );
     }
 
     
     //  console.log(JSON.stringify(geoJsonSample.features[0].geometry.coordinates, null, 2))
 
-    return ( a );
+    return ( [a, c] );
   });
 
   const draggable = settings.showDebugOverlay ? (
-    <Draggable offset={[60, 87]} anchor={anchor} onDragEnd={setAnchor}>
+    <Draggable offset={[900, 450]} anchor={anchor} onDragEnd={setAnchor}>
       <p className="block">{tipText}</p>
     </Draggable>
   ) : null;
 
   return (
     <div className="map">
-      <Map defaultCenter={mapCenter} defaultZoom={15} center={mapCenter}>
+      <Map defaultCenter={mapCenter} defaultZoom={15} center={mapCenter} onBoundsChanged={handleZoomLevel} >
         {listCourses}
         {listOverlays}
         {listMarkers}
@@ -274,7 +320,7 @@ const MyMap = (props) => {
           <img
             className="overlay"
             src={gunnerus}
-            style={{ transform: `rotate(${gunnerusHeading}deg)` }}
+            style={{ transform: `rotate(${gunnerusHeading}deg) scale(${zoomScale})` }}
           />
         </Overlay>
         <Marker key={0} color="red" width={markerSize} anchor={mapCenter} />
