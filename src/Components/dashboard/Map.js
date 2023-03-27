@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 import { Map, Marker, Overlay, GeoJson, Draggable } from "pigeon-maps";
 import "./Map.css"; 
 import gunnerus from "../../Assets/ships/gunnerus.svg";
 import boat from "../../Assets/ships/boat.svg";
 import course from "../../Assets/ships/course.svg"; 
 
-const aisObject = {};
+const aisObject = {}; 
 
 const MyMap = (props) => {
   const data = props.data;
@@ -17,7 +17,7 @@ const MyMap = (props) => {
   const [aisData, setAisData] = useState([]);
   const [anchor, setAnchor] = useState([63.43463, 10.39744]);
   const [tipText, setTipText] = useState("");
-  const [intersects, setintersects] = useState([]);
+  const [arpaObject, setArpaObject] = useState([]);
 
   function deg2dec(coord, direction) {
     let dir = 1;
@@ -26,6 +26,34 @@ const MyMap = (props) => {
     let dec = (coord / 100 - deg) * (10 / 6);
     return dir * (deg + dec);
   }
+
+  var createGeoJSONCircle = function(center, radiusInKm, points) {
+    if(!points) points = 64;
+
+    var coords = {
+        latitude: center[1],
+        longitude: center[0]
+    };
+
+    var km = radiusInKm;
+
+    var ret = [];
+    var distanceX = km/(111.320*Math.cos(coords.latitude*Math.PI/180));
+    var distanceY = km/110.574;
+
+    var theta, x, y;
+    for(var i=0; i<points; i++) {
+        theta = (i/points)*(2*Math.PI);
+        x = distanceX*Math.cos(theta);
+        y = distanceY*Math.sin(theta);
+
+        ret.push([coords.longitude+x, coords.latitude+y]);
+    }
+    ret.push(ret[0]);
+
+    return  [ret] 
+    
+};
 
   useEffect(() => {
     if (!data) return;
@@ -47,9 +75,9 @@ const MyMap = (props) => {
       aisObject[data.message_id] = data;
     }
 
-    if (data.message_id.indexOf("intersects") === 0) {
-      console.log(JSON.stringify(data.intersects, null, 2));
-      setintersects(data.intersects);
+    if (data.message_id.indexOf("arpa") === 0) {
+      console.log(JSON.stringify(data, null, 2)); 
+      setArpaObject(data.data)
     }
   }, [data, setMapCenter, setGunnerusHeading]);
 
@@ -141,7 +169,6 @@ const MyMap = (props) => {
     };
 
     // console.log(JSON.stringify(geoJsonSample.features[0].geometry.coordinates, null, 2))
-
     return (
       <GeoJson
         key={"2" + String(ais.mmsi)}
@@ -149,7 +176,7 @@ const MyMap = (props) => {
         styleCallback={(feature, hover) => {
           return {
             fill: "#00000000",
-            strokeWidth: "2",
+            strokeWidth: "1",
             stroke: "blue",
             r: "20",
           };
@@ -158,7 +185,7 @@ const MyMap = (props) => {
     );
   });
 
-  const listintesects = intersects.map((intersect) => {
+  const listArpa = arpaObject.map((arpa, index) => {
     if (!settings.showHitbox) return null;
     const geoJsonSample = {
       type: "FeatureCollection",
@@ -168,11 +195,8 @@ const MyMap = (props) => {
           geometry: {
             type: "LineString",
             coordinates: [
-              intersect.originL,
-              intersect.targetL,
-              intersect.targetR,
-              intersect.originR,
-              intersect.originL,
+              [arpa.lon_o, arpa.lat_o],
+              [arpa.lon_at_cpa, arpa.lat_at_cpa], 
             ],
           },
           properties: { prop0: "value0" },
@@ -180,22 +204,56 @@ const MyMap = (props) => {
       ],
     };
 
-    //  console.log(JSON.stringify(geoJsonSample.features[0].geometry.coordinates, null, 2))
+    let a = ( <GeoJson
+      key={"0" + index}
+      data={geoJsonSample}
+      styleCallback={(feature, hover) => {
+        return {
+          fill: "#00000000",
+          strokeWidth: "2",
+          opacity: 0.2,
+          stroke: "blue",
+          r: "20",
+        };
+      }}
+    />) 
 
-    return (
-      <GeoJson
-        key={"4" + String(intersect.mmsi)}
-        data={geoJsonSample}
+    if (arpa.safety_params) {
+      const geoCircle = createGeoJSONCircle([arpa.lon_o_at_r, arpa.lat_o_at_r], arpa.safety_radius / 1000)
+      const geoJsonSample2 = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            geometry: {
+              type: "Polygon",
+              coordinates: geoCircle,
+            },
+            properties: { prop0: "value0" },
+          },
+        ],
+      };
+
+      let b = ( <GeoJson
+        key={"1" + index}
+        data={geoJsonSample2}
         styleCallback={(feature, hover) => {
           return {
             fill: "#00000000",
             strokeWidth: "2",
+            opacity: 0.2,
             stroke: "red",
             r: "20",
           };
-        }}
-      />
-    );
+        }} />)
+      
+        return ( [a, b] );
+    }
+
+    
+    //  console.log(JSON.stringify(geoJsonSample.features[0].geometry.coordinates, null, 2))
+
+    return ( a );
   });
 
   const draggable = settings.showDebugOverlay ? (
@@ -211,7 +269,7 @@ const MyMap = (props) => {
         {listOverlays}
         {listMarkers}
         {listPreviousPaths}
-        {listintesects}
+        {listArpa}
         <Overlay anchor={mapCenter} offset={[16, 44]}>
           <img
             className="overlay"

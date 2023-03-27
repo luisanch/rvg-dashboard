@@ -14,7 +14,7 @@ let messageHistory = [];
 function App() {
   const nmeaFilters = ["$GPGGA_ext", "$PSIMSNS_ext"];
   const aisFilter = "!AI";
-  const colavFilter = "intersects";
+  const colavFilter = "arpa";
   const maxBufferLength = 60;
   const [settings, setSettings] = useState({
     showHitbox: true,
