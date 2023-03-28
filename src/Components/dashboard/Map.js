@@ -1,11 +1,11 @@
 import React, { Fragment, useEffect, useState } from "react";
 import { Map, Marker, Overlay, GeoJson, Draggable } from "pigeon-maps";
-import "./Map.css"; 
+import "./Map.css";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
 import boat from "../../Assets/ships/boat.svg";
-import course from "../../Assets/ships/course.svg"; 
+import course from "../../Assets/ships/course.svg";
 
-const aisObject = {}; 
+const aisObject = {};
 
 const MyMap = (props) => {
   const data = props.data;
@@ -20,11 +20,11 @@ const MyMap = (props) => {
   const [arpaObject, setArpaObject] = useState([]);
   const [zoomScale, setZoomScale] = useState(1);
 
-  const handleZoomLevel = (event) => {  
-    const scale = (event.zoom/18)
-    console.log(scale)
-    setZoomScale(scale)
-  }
+  const handleZoomLevel = (event) => {
+    const scale = event.zoom / 18;
+    console.log(scale);
+    setZoomScale(scale);
+  };
 
   function deg2dec(coord, direction) {
     let dir = 1;
@@ -34,33 +34,64 @@ const MyMap = (props) => {
     return dir * (deg + dec);
   }
 
-  var createGeoJSONCircle = function(center, radiusInKm, points) {
-    if(!points) points = 64;
+  var createGeoJSONCircle = function (center, radiusInKm, points) {
+    if (!points) points = 64;
 
     var coords = {
-        latitude: center[1],
-        longitude: center[0]
+      latitude: center[1],
+      longitude: center[0],
     };
 
     var km = radiusInKm;
 
     var ret = [];
-    var distanceX = km/(111.320*Math.cos(coords.latitude*Math.PI/180));
-    var distanceY = km/110.574;
+    var distanceX = km / (111.32 * Math.cos((coords.latitude * Math.PI) / 180));
+    var distanceY = km / 110.574;
 
     var theta, x, y;
-    for(var i=0; i<points; i++) {
-        theta = (i/points)*(2*Math.PI);
-        x = distanceX*Math.cos(theta);
-        y = distanceY*Math.sin(theta);
+    for (var i = 0; i < points; i++) {
+      theta = (i / points) * (2 * Math.PI);
+      x = distanceX * Math.cos(theta);
+      y = distanceY * Math.sin(theta);
 
-        ret.push([coords.longitude+x, coords.latitude+y]);
+      ret.push([coords.longitude + x, coords.latitude + y]);
     }
     ret.push(ret[0]);
 
-    return  [ret] 
-    
-};
+    return [ret];
+  };
+
+  const getGeoLine = (points) => {
+    return {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates: points,
+          },
+          properties: { prop0: "value0" },
+        },
+      ],
+    };
+  };
+
+  const getGeoCircle = (geoCircle) => {
+    return {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: geoCircle,
+          },
+          properties: { prop0: "value0" },
+        },
+      ],
+    };
+  };
 
   useEffect(() => {
     if (!data) return;
@@ -79,12 +110,13 @@ const MyMap = (props) => {
     }
 
     if (data.message_id.indexOf("!AI") === 0) {
+      console.log(data);
       aisObject[data.message_id] = data;
     }
 
     if (data.message_id.indexOf("arpa") === 0) {
-      console.log(JSON.stringify(data, null, 2)); 
-      setArpaObject(data.data)
+      // console.log(JSON.stringify(data, null, 2));
+      setArpaObject(data.data);
     }
   }, [data, setMapCenter, setGunnerusHeading]);
 
@@ -120,11 +152,11 @@ const MyMap = (props) => {
 
     function rotate_heaidng(ais_in) {
       if (ais_in.heading) {
-        return ais_in.heading
-      } else { 
-        return 0
+        return ais_in.heading;
+      } else {
+        return 0;
       }
-     }
+    }
 
     return (
       <Overlay
@@ -135,7 +167,9 @@ const MyMap = (props) => {
         <img
           className="overlay"
           src={boat}
-          style={{ transform: `scale(${zoomScale}) rotate(${rotate_heaidng(ais)}deg) ` }}
+          style={{
+            transform: `scale(${zoomScale}) rotate(${rotate_heaidng(ais)}deg) `,
+          }}
         />
       </Overlay>
     );
@@ -169,25 +203,10 @@ const MyMap = (props) => {
   const listPreviousPaths = aisData.map((ais) => {
     if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return null;
 
-    const geoJsonSample = {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          geometry: {
-            type: "LineString",
-            coordinates: ais.pos_history,
-          },
-          properties: { prop0: "value0" },
-        },
-      ],
-    };
-
-    // console.log(JSON.stringify(geoJsonSample.features[0].geometry.coordinates, null, 2))
     return (
       <GeoJson
         key={"2" + String(ais.mmsi)}
-        data={geoJsonSample}
+        data={getGeoLine(ais.pos_history)}
         styleCallback={(feature, hover) => {
           return {
             fill: "#00000000",
@@ -202,87 +221,14 @@ const MyMap = (props) => {
 
   const listArpa = arpaObject.map((arpa, index) => {
     if (!settings.showHitbox) return null;
-    const geoJsonSample = {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          geometry: {
-            type: "LineString",
-            coordinates: [
-              [arpa.lon_o, arpa.lat_o],
-              [arpa.lon_at_cpa, arpa.lat_at_cpa], 
-            ],
-          },
-          properties: { prop0: "value0" },
-        },
-      ],
-    };
 
-    const geoJsonSample3 = {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          geometry: {
-            type: "LineString",
-            coordinates: [
-              [anchor[1], anchor[0]],
-              [arpa.lon_at_cpa, arpa.lat_at_cpa], 
-            ],
-          },
-          properties: { prop0: "value0" },
-        },
-      ],
-    };
-
-    let c = ( <GeoJson
-      key={"3" + index}
-      data={geoJsonSample3}
-      styleCallback={(feature, hover) => {
-        return {
-          fill: "#00000000",
-          strokeWidth: "2",
-          opacity: 0.2,
-          stroke: "red",
-          r: "20",
-        };
-      }}
-    />) 
-
-    let a = ( <GeoJson
-      key={"0" + index}
-      data={geoJsonSample}
-      styleCallback={(feature, hover) => {
-        return {
-          fill: "#00000000",
-          strokeWidth: "2",
-          opacity: 0.2,
-          stroke: "red",
-          r: "20",
-        };
-      }}
-    />) 
-
-    if (arpa.safety_params) {
-      const geoCircle = createGeoJSONCircle([arpa.lon_o_at_r, arpa.lat_o_at_r], arpa.safety_radius / 1000)
-      const geoJsonSample2 = {
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            geometry: {
-              type: "Polygon",
-              coordinates: geoCircle,
-            },
-            properties: { prop0: "value0" },
-          },
-        ],
-      };
-
-      let b = ( <GeoJson
-        key={"1" + index}
-        data={geoJsonSample2}
+    let cpa_self = (
+      <GeoJson
+        key={"3" + index}
+        data={getGeoLine([
+          [anchor[1], anchor[0]],
+          [arpa.lon_at_cpa, arpa.lat_at_cpa],
+        ])}
         styleCallback={(feature, hover) => {
           return {
             fill: "#00000000",
@@ -291,15 +237,55 @@ const MyMap = (props) => {
             stroke: "red",
             r: "20",
           };
-        }} />)
-      
-        return ( [a, b, c] );
+        }}
+      />
+    );
+
+    let cpa_target = (
+      <GeoJson
+        key={"0" + index}
+        data={getGeoLine([
+          [arpa.lon_o, arpa.lat_o],
+          [arpa.lon_at_cpa, arpa.lat_at_cpa],
+        ])}
+        styleCallback={(feature, hover) => {
+          return {
+            fill: "#00000000",
+            strokeWidth: "2",
+            opacity: 0.2,
+            stroke: "red",
+            r: "20",
+          };
+        }}
+      />
+    );
+
+    if (arpa.safety_params) {
+      const geoCircle = createGeoJSONCircle(
+        [arpa.lon_o_at_r, arpa.lat_o_at_r],
+        arpa.safety_radius / 1000
+      );
+
+      let safety_r = (
+        <GeoJson
+          key={"1" + index}
+          data={getGeoCircle(geoCircle)}
+          styleCallback={(feature, hover) => {
+            return {
+              fill: "#00000000",
+              strokeWidth: "2",
+              opacity: 0.2,
+              stroke: "red",
+              r: "20",
+            };
+          }}
+        />
+      );
+
+      return [cpa_target, safety_r, cpa_self];
     }
 
-    
-    //  console.log(JSON.stringify(geoJsonSample.features[0].geometry.coordinates, null, 2))
-
-    return ( [a, c] );
+    return [cpa_target, cpa_self];
   });
 
   const draggable = settings.showDebugOverlay ? (
@@ -310,7 +296,12 @@ const MyMap = (props) => {
 
   return (
     <div className="map">
-      <Map defaultCenter={mapCenter} defaultZoom={15} center={mapCenter} onBoundsChanged={handleZoomLevel} >
+      <Map
+        defaultCenter={mapCenter}
+        defaultZoom={15}
+        center={mapCenter}
+        onBoundsChanged={handleZoomLevel}
+      >
         {listCourses}
         {listOverlays}
         {listMarkers}
@@ -320,7 +311,9 @@ const MyMap = (props) => {
           <img
             className="overlay"
             src={gunnerus}
-            style={{ transform: `rotate(${gunnerusHeading}deg) scale(${zoomScale})` }}
+            style={{
+              transform: `rotate(${gunnerusHeading}deg) scale(${zoomScale})`,
+            }}
           />
         </Overlay>
         <Marker key={0} color="red" width={markerSize} anchor={mapCenter} />
