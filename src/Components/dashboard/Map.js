@@ -11,6 +11,10 @@ const MyMap = (props) => {
   const data = props.data;
   const markerSize = 20;
   const settings = props.settings;
+  const predictedCourseInterval = 60;
+  const arpaColor = "black";
+  const courseColor = "orange";
+  const previousPathColor = "blue";
 
   const [mapCenter, setMapCenter] = useState([63.43463, 10.39744]);
   const [gunnerusHeading, setGunnerusHeading] = useState(0);
@@ -21,18 +25,18 @@ const MyMap = (props) => {
   const [zoomScale, setZoomScale] = useState(1);
 
   const handleZoomLevel = (event) => {
-    const scale = event.zoom / 18;
+    const scale = event.zoom / (2 * 18);
     console.log(scale);
     setZoomScale(scale);
   };
 
-  function deg2dec(coord, direction) {
+  const deg2dec = (coord, direction) => {
     let dir = 1;
     if (direction === "S" || direction === "W") dir = -1;
     let deg = Math.trunc(coord / 100);
     let dec = (coord / 100 - deg) * (10 / 6);
     return dir * (deg + dec);
-  }
+  };
 
   var createGeoJSONCircle = function (center, radiusInKm, points) {
     if (!points) points = 64;
@@ -93,6 +97,18 @@ const MyMap = (props) => {
     };
   };
 
+  const getPredictedCourse = (course, speed, lat, lon) => {
+    // lon lat
+    const nm_in_deg = 60;
+    const intervalInHours = predictedCourseInterval / 3600;
+    const courseInRads = course * (Math.PI / 180);
+    const d_lon =
+      (intervalInHours * speed * Math.sin(courseInRads)) / nm_in_deg;
+    const d_lat =
+      (intervalInHours * speed * Math.cos(courseInRads)) / nm_in_deg;
+    return [lat + d_lat, lon + d_lon];
+  };
+
   useEffect(() => {
     if (!data) return;
     if (data.message_id === "$GPGGA_ext") {
@@ -147,8 +163,15 @@ const MyMap = (props) => {
     );
   });
 
-  const listOverlays = aisData.map((ais) => {
-    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return null;
+  const listVessels = aisData.map((ais) => {
+    if (
+      isNaN(Number(ais.lat)) ||
+      isNaN(Number(ais.lon)) ||
+      ais.speed === 0 ||
+      !ais.hasOwnProperty("heading") ||
+      !ais.hasOwnProperty("speed")
+    )
+      return null;
 
     function rotate_heaidng(ais_in) {
       if (ais_in.heading) {
@@ -184,19 +207,29 @@ const MyMap = (props) => {
       !ais.hasOwnProperty("speed")
     )
       return null;
+    const predictedCourse = getPredictedCourse(
+      ais.course,
+      ais.speed,
+      ais.lat,
+      ais.lon
+    );
 
     return (
-      <Overlay
-        key={"3" + String(ais.mmsi)}
-        anchor={[Number(ais.lat), Number(ais.lon)]}
-        offset={[80, 150]}
-      >
-        <img
-          className="course"
-          src={course}
-          style={{ transform: `rotate(${ais.course}deg))` }}
-        />
-      </Overlay>
+      <GeoJson
+        key={"2" + String(ais.mmsi)}
+        data={getGeoLine([
+          [ais.lon, ais.lat],
+          [predictedCourse[1], predictedCourse[0]],
+        ])}
+        styleCallback={(feature, hover) => {
+          return {
+            fill: "#00000000",
+            strokeWidth: "2",
+            stroke: courseColor,
+            r: "20",
+          };
+        }}
+      />
     );
   });
 
@@ -211,7 +244,8 @@ const MyMap = (props) => {
           return {
             fill: "#00000000",
             strokeWidth: "1",
-            stroke: "blue",
+            opacity: 0.5,
+            stroke: previousPathColor,
             r: "20",
           };
         }}
@@ -234,7 +268,7 @@ const MyMap = (props) => {
             fill: "#00000000",
             strokeWidth: "2",
             opacity: 0.2,
-            stroke: "red",
+            stroke: arpaColor,
             r: "20",
           };
         }}
@@ -253,7 +287,7 @@ const MyMap = (props) => {
             fill: "#00000000",
             strokeWidth: "2",
             opacity: 0.2,
-            stroke: "red",
+            stroke: arpaColor,
             r: "20",
           };
         }}
@@ -275,14 +309,14 @@ const MyMap = (props) => {
               fill: "#00000000",
               strokeWidth: "2",
               opacity: 0.2,
-              stroke: "red",
+              stroke: arpaColor,
               r: "20",
             };
           }}
         />
       );
 
-      return [cpa_target, safety_r, cpa_self];
+      return [cpa_target, cpa_self, safety_r];
     }
 
     return [cpa_target, cpa_self];
@@ -303,7 +337,7 @@ const MyMap = (props) => {
         onBoundsChanged={handleZoomLevel}
       >
         {listCourses}
-        {listOverlays}
+        {listVessels}
         {listMarkers}
         {listPreviousPaths}
         {listArpa}
