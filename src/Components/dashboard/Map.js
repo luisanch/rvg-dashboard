@@ -10,8 +10,7 @@ const aisObject = {};
 const MyMap = (props) => {
   const data = props.data;
   const markerSize = 20;
-  const settings = props.settings;
-  const predictedCourseInterval = 60;
+  const settings = props.settings; 
   const arpaColor = "black";
   const courseColor = "orange";
   const previousPathColor = "blue";
@@ -108,18 +107,7 @@ const MyMap = (props) => {
         },
       ],
     };
-  };
-
-  const getPredictedCourse = (course, speed, lat, lon) => {
-    const nm_in_deg = 60;
-    const intervalInHours = predictedCourseInterval / 3600;
-    const courseInRads = course * (Math.PI / 180);
-    const d_lon =
-      (intervalInHours * speed * Math.sin(courseInRads)) / nm_in_deg;
-    const d_lat =
-      (intervalInHours * speed * Math.cos(courseInRads)) / nm_in_deg;
-    return [lat + d_lat, lon + d_lon];
-  };
+  }; 
 
   useEffect(() => {
     if (!data) return;
@@ -138,7 +126,7 @@ const MyMap = (props) => {
     }
 
     if (data.message_id.indexOf("!AI") === 0) {
-      // console.log(data);
+      console.log(data);
 
       if (!aisObject.hasOwnProperty(data.mmsi)) {
         aisObject[data.mmsi] = data;
@@ -177,6 +165,15 @@ const MyMap = (props) => {
       aisObject[ais.mmsi]["pinTooltip"] = false;
       aisObject[ais.mmsi]["hoverTooltip"] = false;
     }
+
+    const formatString = (text, maxLength = 9) => {
+      const stringText = String(text);
+      if (stringText.length > maxLength) {
+        return stringText.slice(0, maxLength);
+      } else {
+        return stringText;
+      }
+    };
 
     const tooltipText = (ais) => {
       const hasArpa = arpaObject.hasOwnProperty(ais.mmsi);
@@ -218,37 +215,37 @@ const MyMap = (props) => {
           </tr>
           <tr>
             <td>Course</td>
-            <td>{course}</td>
+            <td>{formatString(course)}</td>
             <td>°</td>{" "}
           </tr>
           <tr>
             <td>Speed</td>
-            <td>{speed}</td>
-            <td>m/s</td>{" "}
+            <td>{formatString(speed)}</td>
+            <td>knots</td>{" "}
           </tr>
           <tr>
             <td>Time to CPA</td>
-            <td>{t2cpa}</td>
+            <td>{formatString(t2cpa)}</td>
             <td>s</td>{" "}
           </tr>
           <tr>
             <td>Dist. to CPA</td>
-            <td>{d2cpa}</td>
+            <td>{formatString(d2cpa)}</td>
             <td>m</td>{" "}
           </tr>
           <tr>
             <td>Dist. at CPA</td>
-            <td>{dAtcpa}</td>
+            <td>{formatString(dAtcpa)}</td>
             <td>m</td>{" "}
           </tr>
           <tr>
             <td>Time to Safety r</td>
-            <td>{t2r}</td>
+            <td>{formatString(t2r)}</td>
             <td>s</td>{" "}
           </tr>
           <tr>
             <td>Dist. to Safety r</td>
-            <td>{d2r}</td>
+            <td>{formatString(d2r)}</td>
             <td>m</td>{" "}
           </tr>
         </table>
@@ -259,12 +256,12 @@ const MyMap = (props) => {
       <Overlay
         key={"6" + ais.mmsi}
         anchor={[ais.lat, ais.lon]}
-        offset={[150, 230]}
+        offset={[200, 255]}
       >
         <p
           style={{
-            width: "150px",
-            height: "200px",
+            width: "200px",
+            height: "230px",
             background: "white",
             fontSize: "12px",
             opacity: 0.8,
@@ -339,25 +336,19 @@ const MyMap = (props) => {
   const listCourses = aisData.map((ais) => {
     if (
       isNaN(Number(ais.lat)) ||
-      isNaN(Number(ais.lon)) ||
-      ais.speed === 0 ||
-      !ais.hasOwnProperty("course") ||
-      !ais.hasOwnProperty("speed")
+      isNaN(Number(ais.lon)) || 
+      !ais.hasOwnProperty("lat_p") ||
+      !ais.hasOwnProperty("lon_p") ||
+      ais.speed <= 0 
     )
-      return null;
-    const predictedCourse = getPredictedCourse(
-      ais.course,
-      ais.speed,
-      ais.lat,
-      ais.lon
-    );
+      return null; 
 
     return (
       <GeoJson
         key={"2" + String(ais.mmsi)}
         data={getGeoLine([
           [ais.lon, ais.lat],
-          [predictedCourse[1], predictedCourse[0]],
+          [ais.lon_p, ais.lat_p],
         ])}
         styleCallback={(feature, hover) => {
           return {
