@@ -15,6 +15,10 @@ export default function Settings(props) {
     update('showDebugOverlay', event.target.checked)
   };
 
+  const handleChangeTooltips = (event) => {
+    update('showAllTooltips', event.target.checked)
+  };
+
   const update = (setting, value) => {
     settings[setting] = value
     setSettings(settings)
@@ -22,7 +26,8 @@ export default function Settings(props) {
   return (
     <FormGroup>
       <FormControlLabel control={<Checkbox checked={settings.showHitbox} onChange={handleChangeHitbox} />} label="Show ARPA data" />
-      <FormControlLabel control={<Checkbox checked={settings.showDebugOverlay} onChange={handleChangeOverlay}/>} label="Show Debug Overlay" />
+      <FormControlLabel control={<Checkbox disabled={!settings.showHitbox} checked={settings.showAllTooltips} onChange={handleChangeTooltips} />} label="Always display ARPA tooltips" />
+      <FormControlLabel control={<Checkbox checked={settings.showDebugOverlay} onChange={handleChangeOverlay} />} label="Show Debug Overlay" />
     </FormGroup>
   );
 }

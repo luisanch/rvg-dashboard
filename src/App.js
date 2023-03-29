@@ -18,6 +18,7 @@ function App() {
   const maxBufferLength = 60;
   const [settings, setSettings] = useState({
     showHitbox: true,
+    showAllTooltips: false,
     showDebugOverlay: false,
   });
 

@@ -3,7 +3,7 @@ import { Map, Marker, Overlay, GeoJson, Draggable } from "pigeon-maps";
 import "./Map.css";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
 import boat from "../../Assets/ships/boat.svg";
-import boat_s from "../../Assets/ships/boat_s.svg"; 
+import boat_s from "../../Assets/ships/boat_s.svg";
 
 const aisObject = {};
 
@@ -111,7 +111,6 @@ const MyMap = (props) => {
   };
 
   const getPredictedCourse = (course, speed, lat, lon) => {
-    // lon lat
     const nm_in_deg = 60;
     const intervalInHours = predictedCourseInterval / 3600;
     const courseInRads = course * (Math.PI / 180);
@@ -140,7 +139,16 @@ const MyMap = (props) => {
 
     if (data.message_id.indexOf("!AI") === 0) {
       // console.log(data);
-      aisObject[data.message_id] = data;
+
+      if (!aisObject.hasOwnProperty(data.mmsi)) {
+        aisObject[data.mmsi] = data;
+        aisObject[data.mmsi]["pinTooltip"] = false;
+        aisObject[data.mmsi]["hoverTooltip"] = false;
+      } else {
+        data["pinTooltip"] = aisObject[data.mmsi]["pinTooltip"];
+        data["hoverTooltip"] = aisObject[data.mmsi]["hoverTooltip"];
+        aisObject[data.mmsi] = data;
+      }
     }
 
     if (data.message_id.indexOf("arpa") === 0) {
@@ -165,15 +173,132 @@ const MyMap = (props) => {
   const listMarkers = aisData.map((ais) => {
     if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return null;
 
-    return (
+    if (!aisObject[ais.mmsi].hasOwnProperty("pinTooltip")) {
+      aisObject[ais.mmsi]["pinTooltip"] = false;
+      aisObject[ais.mmsi]["hoverTooltip"] = false;
+    }
+
+    const tooltipText = (ais) => {
+      const hasArpa = arpaObject.hasOwnProperty(ais.mmsi);
+      const hasSafetyParams = hasArpa && arpaObject[ais.mmsi].safety_params;
+
+      const lon = ais.lon;
+      const lat = ais.lat;
+      const course = ais.hasOwnProperty("course") ? ais.course : "--";
+      const mmsi = ais.mmsi;
+      const speed = ais.hasOwnProperty("speed") ? ais.speed : "--";
+      const d2cpa = hasArpa ? arpaObject[ais.mmsi]["d_2_cpa"] : "--";
+      const t2cpa = hasArpa ? arpaObject[ais.mmsi]["t_2_cpa"] : "--";
+      const dAtcpa = hasArpa ? arpaObject[ais.mmsi]["d_at_cpa"] : "--";
+      const t2r = hasSafetyParams ? arpaObject[ais.mmsi]["t_2_r"] : "--";
+      const d2r = hasSafetyParams ? arpaObject[ais.mmsi]["d_2_r"] : "--";
+
+      return (
+        <table>
+          <tr>
+            <th>Parameter</th>
+            <th>Value</th>
+            <th>Units</th>
+          </tr>
+
+          <tr>
+            <td>MMSI</td>
+            <td>{mmsi}</td>
+            <td>#</td>{" "}
+          </tr>
+          <tr>
+            <td>Longitude</td>
+            <td>{lon}</td>
+            <td>DD</td>{" "}
+          </tr>
+          <tr>
+            <td>Latitude</td>
+            <td>{lat}</td>
+            <td>DD</td>{" "}
+          </tr>
+          <tr>
+            <td>Course</td>
+            <td>{course}</td>
+            <td>°</td>{" "}
+          </tr>
+          <tr>
+            <td>Speed</td>
+            <td>{speed}</td>
+            <td>m/s</td>{" "}
+          </tr>
+          <tr>
+            <td>Time to CPA</td>
+            <td>{t2cpa}</td>
+            <td>s</td>{" "}
+          </tr>
+          <tr>
+            <td>Dist. to CPA</td>
+            <td>{d2cpa}</td>
+            <td>m</td>{" "}
+          </tr>
+          <tr>
+            <td>Dist. at CPA</td>
+            <td>{dAtcpa}</td>
+            <td>m</td>{" "}
+          </tr>
+          <tr>
+            <td>Time to Safety r</td>
+            <td>{t2r}</td>
+            <td>s</td>{" "}
+          </tr>
+          <tr>
+            <td>Dist. to Safety r</td>
+            <td>{d2r}</td>
+            <td>m</td>{" "}
+          </tr>
+        </table>
+      );
+    };
+
+    const tooltipOverlay = (
+      <Overlay
+        key={"6" + ais.mmsi}
+        anchor={[ais.lat, ais.lon]}
+        offset={[150, 230]}
+      >
+        <p
+          style={{
+            width: "150px",
+            height: "200px",
+            background: "white",
+            fontSize: "12px",
+            opacity: 0.8,
+          }}
+        >
+          {tooltipText(ais)}
+        </p>
+      </Overlay>
+    );
+
+    const tooltip =
+      aisObject[ais.mmsi]["hoverTooltip"] || aisObject[ais.mmsi].pinTooltip
+        ? tooltipOverlay
+        : null;
+
+    return [
+      tooltip,
       <Marker
         key={ais.mmsi}
         color="green"
         width={markerSize}
-        onClick={() => setTipText(JSON.stringify(ais, null, 2))}
+        onClick={() => {
+          console.log(tooltip);
+          setTipText(JSON.stringify(ais, null, 2));
+          aisObject[ais.mmsi].pinTooltip = !aisObject[ais.mmsi].pinTooltip;
+        }}
+        onMouseOver={() => {
+          aisObject[ais.mmsi]["hoverTooltip"] = true;
+          console.log(aisObject[ais.mmsi]["hoverTooltip"]);
+        }}
+        onMouseOut={() => (aisObject[ais.mmsi]["hoverTooltip"] = false)}
         anchor={[Number(ais.lat), Number(ais.lon)]}
-      />
-    );
+      />,
+    ];
   });
 
   const listVessels = aisData.map((ais) => {
@@ -266,16 +391,15 @@ const MyMap = (props) => {
     );
   });
 
-  const listArpa = arpaObject.map((arpa, index) => {
-    if (!settings.showHitbox) return null; 
-    
+  const listArpa = Object.values(arpaObject).map((arpa, index) => {
+    if (!settings.showHitbox) return null;
 
     let cpa = (
       <GeoJson
         key={"0" + index}
         data={getGeoLine([
           [anchor[1], anchor[0]],
-          [arpa.lon_at_cpa, arpa.lat_at_cpa], 
+          [arpa.lon_at_cpa, arpa.lat_at_cpa],
           [arpa.lon_o_at_cpa, arpa.lat_o_at_cpa],
           [arpa.lon_o, arpa.lat_o],
         ])}
@@ -300,7 +424,6 @@ const MyMap = (props) => {
         <img
           className="overlay"
           src={boat}
-          
           style={{
             transform: `scale(${zoomScale}) rotate(${arpa.course}deg) `,
             opacity: 0.5,
@@ -318,7 +441,6 @@ const MyMap = (props) => {
         <img
           className="overlay"
           src={gunnerus}
-          
           style={{
             transform: `scale(${zoomScale}) rotate(${arpa.self_course}deg) `,
             opacity: 0.5,
@@ -326,7 +448,6 @@ const MyMap = (props) => {
         />
       </Overlay>
     );
-
 
     if (arpa.safety_params) {
       const geoCircle = createGeoJSONCircle(
@@ -359,7 +480,6 @@ const MyMap = (props) => {
           <img
             className="overlay"
             src={boat_s}
-            
             style={{
               transform: `scale(${zoomScale}) rotate(${arpa.self_course}deg) `,
               opacity: 0.5,
@@ -368,11 +488,15 @@ const MyMap = (props) => {
         </Overlay>
       );
 
-      
-      return [cpa, cpa_target_vessel, cpa_self_vessel, safety_self_vessel, safety_r];
+      return [
+        cpa,
+        cpa_target_vessel,
+        cpa_self_vessel,
+        safety_self_vessel,
+        safety_r,
+      ];
     }
 
-    
     return [cpa, cpa_target_vessel, cpa_self_vessel];
   });
 
