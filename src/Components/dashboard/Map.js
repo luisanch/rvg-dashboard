@@ -3,7 +3,7 @@ import { Map, Marker, Overlay, GeoJson, Draggable } from "pigeon-maps";
 import "./Map.css";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
 import boat from "../../Assets/ships/boat.svg";
-import course from "../../Assets/ships/course.svg";
+import boat_s from "../../Assets/ships/boat_s.svg"; 
 
 const aisObject = {};
 
@@ -97,6 +97,19 @@ const MyMap = (props) => {
     };
   };
 
+  const getGeoPoint = (coord) => {
+    return {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: coord },
+          properties: { prop0: "value0" },
+        },
+      ],
+    };
+  };
+
   const getPredictedCourse = (course, speed, lat, lon) => {
     // lon lat
     const nm_in_deg = 60;
@@ -126,12 +139,12 @@ const MyMap = (props) => {
     }
 
     if (data.message_id.indexOf("!AI") === 0) {
-      console.log(data);
+      // console.log(data);
       aisObject[data.message_id] = data;
     }
 
     if (data.message_id.indexOf("arpa") === 0) {
-      // console.log(JSON.stringify(data, null, 2));
+      console.log(JSON.stringify(data, null, 2));
       setArpaObject(data.data);
     }
   }, [data, setMapCenter, setGunnerusHeading]);
@@ -254,33 +267,17 @@ const MyMap = (props) => {
   });
 
   const listArpa = arpaObject.map((arpa, index) => {
-    if (!settings.showHitbox) return null;
+    if (!settings.showHitbox) return null; 
+    
 
-    let cpa_self = (
-      <GeoJson
-        key={"3" + index}
-        data={getGeoLine([
-          [anchor[1], anchor[0]],
-          [arpa.lon_at_cpa, arpa.lat_at_cpa],
-        ])}
-        styleCallback={(feature, hover) => {
-          return {
-            fill: "#00000000",
-            strokeWidth: "2",
-            opacity: 0.2,
-            stroke: arpaColor,
-            r: "20",
-          };
-        }}
-      />
-    );
-
-    let cpa_target = (
+    let cpa = (
       <GeoJson
         key={"0" + index}
         data={getGeoLine([
+          [anchor[1], anchor[0]],
+          [arpa.lon_at_cpa, arpa.lat_at_cpa], 
+          [arpa.lon_o_at_cpa, arpa.lat_o_at_cpa],
           [arpa.lon_o, arpa.lat_o],
-          [arpa.lon_at_cpa, arpa.lat_at_cpa],
         ])}
         styleCallback={(feature, hover) => {
           return {
@@ -293,6 +290,43 @@ const MyMap = (props) => {
         }}
       />
     );
+
+    let cpa_target_vessel = (
+      <Overlay
+        key={"4" + index}
+        anchor={[arpa.lat_o_at_cpa, arpa.lon_o_at_cpa]}
+        offset={[16, 44]}
+      >
+        <img
+          className="overlay"
+          src={boat}
+          
+          style={{
+            transform: `scale(${zoomScale}) rotate(${arpa.course}deg) `,
+            opacity: 0.5,
+          }}
+        />
+      </Overlay>
+    );
+
+    const cpa_self_vessel = (
+      <Overlay
+        key={"5" + index}
+        anchor={[arpa.lat_at_cpa, arpa.lon_at_cpa]}
+        offset={[16, 44]}
+      >
+        <img
+          className="overlay"
+          src={gunnerus}
+          
+          style={{
+            transform: `scale(${zoomScale}) rotate(${arpa.self_course}deg) `,
+            opacity: 0.5,
+          }}
+        />
+      </Overlay>
+    );
+
 
     if (arpa.safety_params) {
       const geoCircle = createGeoJSONCircle(
@@ -316,10 +350,30 @@ const MyMap = (props) => {
         />
       );
 
-      return [cpa_target, cpa_self, safety_r];
+      const safety_self_vessel = (
+        <Overlay
+          key={"6" + index}
+          anchor={[arpa.lat_at_r, arpa.lon_at_r]}
+          offset={[16, 44]}
+        >
+          <img
+            className="overlay"
+            src={boat_s}
+            
+            style={{
+              transform: `scale(${zoomScale}) rotate(${arpa.self_course}deg) `,
+              opacity: 0.5,
+            }}
+          />
+        </Overlay>
+      );
+
+      
+      return [cpa, cpa_target_vessel, cpa_self_vessel, safety_self_vessel, safety_r];
     }
 
-    return [cpa_target, cpa_self];
+    
+    return [cpa, cpa_target_vessel, cpa_self_vessel];
   });
 
   const draggable = settings.showDebugOverlay ? (
@@ -336,11 +390,12 @@ const MyMap = (props) => {
         center={mapCenter}
         onBoundsChanged={handleZoomLevel}
       >
+        {listPreviousPaths}
+        {listArpa}
         {listCourses}
         {listVessels}
         {listMarkers}
-        {listPreviousPaths}
-        {listArpa}
+
         <Overlay anchor={mapCenter} offset={[16, 44]}>
           <img
             className="overlay"
