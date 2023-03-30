@@ -4,13 +4,21 @@ import "./Map.css";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
 import boat from "../../Assets/ships/boat.svg";
 import boat_s from "../../Assets/ships/boat_s.svg";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
+import { maxHeight } from "@mui/system";
 
 const aisObject = {};
 
 const MyMap = (props) => {
   const data = props.data;
   const markerSize = 20;
-  const settings = props.settings; 
+  const settings = props.settings;
   const arpaColor = "black";
   const courseColor = "orange";
   const previousPathColor = "blue";
@@ -107,7 +115,7 @@ const MyMap = (props) => {
         },
       ],
     };
-  }; 
+  };
 
   useEffect(() => {
     if (!data) return;
@@ -158,7 +166,7 @@ const MyMap = (props) => {
     };
   }, []);
 
-  const listMarkers = aisData.map((ais) => {
+  const listTooltips = aisData.map((ais) => {
     if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return null;
 
     if (!aisObject[ais.mmsi].hasOwnProperty("pinTooltip")) {
@@ -190,65 +198,53 @@ const MyMap = (props) => {
       const t2r = hasSafetyParams ? arpaObject[ais.mmsi]["t_2_r"] : "--";
       const d2r = hasSafetyParams ? arpaObject[ais.mmsi]["d_2_r"] : "--";
 
-      return (
-        <table>
-          <tr>
-            <th>Parameter</th>
-            <th>Value</th>
-            <th>Units</th>
-          </tr>
+      function createData(parameter, value, unit) {
+        return { parameter, value, unit };
+      }
 
-          <tr>
-            <td>MMSI</td>
-            <td>{mmsi}</td>
-            <td>#</td>{" "}
-          </tr>
-          <tr>
-            <td>Longitude</td>
-            <td>{lon}</td>
-            <td>DD</td>{" "}
-          </tr>
-          <tr>
-            <td>Latitude</td>
-            <td>{lat}</td>
-            <td>DD</td>{" "}
-          </tr>
-          <tr>
-            <td>Course</td>
-            <td>{formatString(course)}</td>
-            <td>°</td>{" "}
-          </tr>
-          <tr>
-            <td>Speed</td>
-            <td>{formatString(speed)}</td>
-            <td>knots</td>{" "}
-          </tr>
-          <tr>
-            <td>Time to CPA</td>
-            <td>{formatString(t2cpa)}</td>
-            <td>s</td>{" "}
-          </tr>
-          <tr>
-            <td>Dist. to CPA</td>
-            <td>{formatString(d2cpa)}</td>
-            <td>m</td>{" "}
-          </tr>
-          <tr>
-            <td>Dist. at CPA</td>
-            <td>{formatString(dAtcpa)}</td>
-            <td>m</td>{" "}
-          </tr>
-          <tr>
-            <td>Time to Safety r</td>
-            <td>{formatString(t2r)}</td>
-            <td>s</td>{" "}
-          </tr>
-          <tr>
-            <td>Dist. to Safety r</td>
-            <td>{formatString(d2r)}</td>
-            <td>m</td>{" "}
-          </tr>
-        </table>
+      const rows = [
+        createData("MMSI", mmsi, "#"),
+        createData("Longitude", lon, "DD"),
+        createData("Latitude", lat, "DD"),
+        createData("Course", course, "°"),
+        createData("Speed", speed, "kn"),
+        createData("T. to CPA", formatString(t2cpa), "s"),
+        createData("Dist. to CPA", formatString(d2cpa), "m"),
+        createData("Dist. at CPA", formatString(dAtcpa), "m"),
+        createData("T. to Saf. r", formatString(t2r), "s"),
+        createData("Dist. to Saf. r", formatString(d2r), "m"),
+      ];
+
+      return (
+        <TableContainer
+          component={Paper}
+          style={{
+            transform: `scale(${0.77}) `,
+            opacity: 0.85,
+          }}
+        >
+          <Table sx={{ maxWidth: 285 }} size="small" aria-label="a dense table">
+            <TableHead>
+              <TableRow>
+                <TableCell align="left">Parameter</TableCell>
+                <TableCell align="right">Value</TableCell>
+                <TableCell align="right">Units</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow
+                  key={row.parameter}
+                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                >
+                  <TableCell align="left">{row.parameter}</TableCell>
+                  <TableCell align="right">{row.value}</TableCell>
+                  <TableCell align="right">{row.unit}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       );
     };
 
@@ -256,19 +252,9 @@ const MyMap = (props) => {
       <Overlay
         key={"6" + ais.mmsi}
         anchor={[ais.lat, ais.lon]}
-        offset={[200, 255]}
+        offset={[30, 340]}
       >
-        <p
-          style={{
-            width: "200px",
-            height: "230px",
-            background: "white",
-            fontSize: "12px",
-            opacity: 0.8,
-          }}
-        >
-          {tooltipText(ais)}
-        </p>
+        {tooltipText(ais)}
       </Overlay>
     );
 
@@ -277,14 +263,18 @@ const MyMap = (props) => {
         ? tooltipOverlay
         : null;
 
-    return [
-      tooltip,
+    return tooltip;
+  });
+
+  const listMarkers = aisData.map((ais) => {
+    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return null;
+
+    return (
       <Marker
         key={ais.mmsi}
         color="green"
         width={markerSize}
         onClick={() => {
-          console.log(tooltip);
           setTipText(JSON.stringify(ais, null, 2));
           aisObject[ais.mmsi].pinTooltip = !aisObject[ais.mmsi].pinTooltip;
         }}
@@ -294,8 +284,8 @@ const MyMap = (props) => {
         }}
         onMouseOut={() => (aisObject[ais.mmsi]["hoverTooltip"] = false)}
         anchor={[Number(ais.lat), Number(ais.lon)]}
-      />,
-    ];
+      />
+    );
   });
 
   const listVessels = aisData.map((ais) => {
@@ -336,12 +326,12 @@ const MyMap = (props) => {
   const listCourses = aisData.map((ais) => {
     if (
       isNaN(Number(ais.lat)) ||
-      isNaN(Number(ais.lon)) || 
+      isNaN(Number(ais.lon)) ||
       !ais.hasOwnProperty("lat_p") ||
       !ais.hasOwnProperty("lon_p") ||
-      ais.speed <= 0 
+      ais.speed <= 0
     )
-      return null; 
+      return null;
 
     return (
       <GeoJson
@@ -508,7 +498,8 @@ const MyMap = (props) => {
         {listPreviousPaths}
         {listArpa}
         {listCourses}
-        {listVessels}
+        {listVessels} 
+        {listTooltips}
         {listMarkers}
 
         <Overlay anchor={mapCenter} offset={[16, 44]}>
