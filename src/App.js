@@ -15,6 +15,7 @@ function App() {
   const nmeaFilters = ["$GPGGA_ext", "$PSIMSNS_ext"];
   const aisFilter = "!AI";
   const colavFilter = "arpa";
+  const cbfFilter = "cbf"
   const maxBufferLength = 60;
   const [settings, setSettings] = useState({
     showHitbox: true,
@@ -48,7 +49,7 @@ function App() {
     if (
       nmeaFilters.includes(msg.message_id) ||
       (msg.message_id.includes(aisFilter) && msg.message_id.includes("_ext")) ||
-      msg.message_id.includes(colavFilter)
+      msg.message_id.includes(colavFilter) || msg.message_id.includes(cbfFilter)
     ) {
       return msg;
     } else {

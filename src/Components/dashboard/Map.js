@@ -29,11 +29,12 @@ const MyMap = (props) => {
   const [anchor, setAnchor] = useState([63.43463, 10.39744]);
   const [tipText, setTipText] = useState("");
   const [arpaObject, setArpaObject] = useState([]);
+  const [cbfObject, setCBFObject] = useState([]);
   const [zoomScale, setZoomScale] = useState(1);
 
   const handleZoomLevel = (event) => {
     const scale = event.zoom / (2 * 18);
-    console.log(scale);
+    // console.log(scale);
     setZoomScale(scale);
   };
 
@@ -134,7 +135,7 @@ const MyMap = (props) => {
     }
 
     if (data.message_id.indexOf("!AI") === 0) {
-      console.log(data);
+      // console.log(data);
 
       if (!aisObject.hasOwnProperty(data.mmsi)) {
         aisObject[data.mmsi] = data;
@@ -148,8 +149,13 @@ const MyMap = (props) => {
     }
 
     if (data.message_id.indexOf("arpa") === 0) {
-      console.log(JSON.stringify(data, null, 2));
+      // console.log(JSON.stringify(data, null, 2));
       setArpaObject(data.data);
+    }
+
+    if (data.message_id.indexOf("cbf") === 0) { 
+      console.log(JSON.stringify(data.data.cbf, null, 2));
+      setCBFObject(data.data.cbf);
     }
   }, [data, setMapCenter, setGunnerusHeading]);
 
@@ -488,14 +494,31 @@ const MyMap = (props) => {
   ) : null;
 
   return (
-    <div className="map">
+    <div className="mapcontainer">
+      <div className="map"
+      style={{
+        transform: `rotate(${settings.navigationMode ? -gunnerusHeading : 0}deg) `,
+      }}>
       <Map
         defaultCenter={mapCenter}
         defaultZoom={15}
         center={mapCenter}
-        onBoundsChanged={handleZoomLevel}
+        onBoundsChanged={handleZoomLevel} 
       >
         {listPreviousPaths}
+        <GeoJson
+          key={"180"}
+          data={getGeoLine(cbfObject)}
+          styleCallback={(feature, hover) => {
+            return {
+              fill: "#00000000",
+              strokeWidth: "4",
+              opacity: 0.8,
+              stroke: 'red',
+              r: "20",
+            };
+          }}
+        />
         {listArpa}
         {listCourses}
         {listVessels} 
@@ -514,7 +537,8 @@ const MyMap = (props) => {
         <Marker key={0} color="red" width={markerSize} anchor={mapCenter} />
         {draggable}
       </Map>
-    </div>
+      </div>
+      </div>
   );
 };
 
