@@ -14,6 +14,11 @@ import Paper from "@mui/material/Paper";
 import { maxHeight } from "@mui/system";
 
 const aisObject = {};
+let countdown = -1;
+const refreshInterval = 500;
+const cleanupInterval = 15000;
+let cleanupCoundownARPA = cleanupInterval;
+let cleanupCoundownCBF = cleanupInterval;
 
 const MyMap = (props) => {
   const data = props.data;
@@ -22,6 +27,8 @@ const MyMap = (props) => {
   const arpaColor = "black";
   const courseColor = "orange";
   const previousPathColor = "blue";
+  
+  
 
   const [mapCenter, setMapCenter] = useState([63.43463, 10.39744]);
   const [gunnerusHeading, setGunnerusHeading] = useState(0);
@@ -31,6 +38,7 @@ const MyMap = (props) => {
   const [arpaObject, setArpaObject] = useState([]);
   const [cbfObject, setCBFObject] = useState([]);
   const [zoomScale, setZoomScale] = useState(1);
+  const [cbfTimer, setCbftimer] = useState();
 
   const handleZoomLevel = (event) => {
     const scale = event.zoom / (2 * 18);
@@ -149,24 +157,35 @@ const MyMap = (props) => {
     }
 
     if (data.message_id.indexOf("arpa") === 0) {
-      // console.log(JSON.stringify(data, null, 2));
+      cleanupCoundownARPA = cleanupInterval;
       setArpaObject(data.data);
     }
 
-    if (data.message_id.indexOf("cbf") === 0) { 
-      console.log(JSON.stringify(data.data.cbf, null, 2));
+    if (data.message_id.indexOf("cbf") === 0) {
+      // console.log(JSON.stringify(data.data.maneuver_start, null, 2));
+      cleanupCoundownCBF = cleanupInterval;
       setCBFObject(data.data.cbf);
+      const d = new Date();
+      let time = d.getTime();
+      countdown = (Number(data.data.maneuver_start)  - (time / 1000));
     }
   }, [data, setMapCenter, setGunnerusHeading]);
 
   useEffect(() => {
-    const interval = setInterval(
-      () =>
-        setAisData(() => {
-          return Object.values(aisObject);
-        }),
-      1000
-    );
+    const interval = setInterval(() => {
+      setAisData(() => {
+        return Object.values(aisObject);
+      });
+
+      console.log(countdown);
+      countdown -= refreshInterval / 1000;
+      if (countdown < 0) countdown = -1; 
+      cleanupCoundownARPA -= refreshInterval
+      if (cleanupCoundownARPA < 0) setArpaObject([])
+      cleanupCoundownCBF -= refreshInterval
+      if (cleanupCoundownCBF < 0) setCBFObject([])
+      setCbftimer(countdown.toFixed(2));
+    }, refreshInterval);
     return () => {
       clearInterval(interval);
     };
@@ -277,6 +296,10 @@ const MyMap = (props) => {
 
     return (
       <Marker
+        // style={{
+        //   transform: `rotate(${settings.navigationMode ? gunnerusHeading : 0
+        //     }deg) `,
+        // }}
         key={ais.mmsi}
         color="green"
         width={markerSize}
@@ -286,7 +309,7 @@ const MyMap = (props) => {
         }}
         onMouseOver={() => {
           aisObject[ais.mmsi]["hoverTooltip"] = true;
-          console.log(aisObject[ais.mmsi]["hoverTooltip"]);
+          // console.log(aisObject[ais.mmsi]["hoverTooltip"]);
         }}
         onMouseOut={() => (aisObject[ais.mmsi]["hoverTooltip"] = false)}
         anchor={[Number(ais.lat), Number(ais.lon)]}
@@ -359,7 +382,8 @@ const MyMap = (props) => {
   });
 
   const listPreviousPaths = aisData.map((ais) => {
-    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return null;
+    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon)) || ais.speed <= 0)
+      return null;
 
     return (
       <GeoJson
@@ -493,52 +517,90 @@ const MyMap = (props) => {
     </Draggable>
   ) : null;
 
+  const maneuverCountdown = countdown > 0 ? (
+    <Overlay key={"coundownoverlay"} anchor={mapCenter} offset={[100, -100]}>
+      <TableContainer
+        component={Paper}
+        key={"maneuvercountdowntable"}
+        style={{
+         
+          opacity: 0.85,
+        }}
+      >
+        <Table sx={{ maxWidth: 250 }} size="small" aria-label="a dense table">
+          <TableHead>
+            <TableRow>
+              <TableCell align="right">t. remain.</TableCell>
+              <TableCell align="left">unit</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            <TableRow
+              key={"maneuverCountdownrow"}
+              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+            >
+              <TableCell align="right">{cbfTimer}</TableCell>
+              <TableCell align="left">s</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Overlay>
+  ) : null;
+
   return (
     <div className="mapcontainer">
-      <div className="map"
-      style={{
-        transform: `rotate(${settings.navigationMode ? -gunnerusHeading : 0}deg) `,
-      }}>
-      <Map
-        defaultCenter={mapCenter}
-        defaultZoom={15}
-        center={mapCenter}
-        onBoundsChanged={handleZoomLevel} 
+      <div
+        className="map"
+        style={{
+          transform: `rotate(${
+            settings.navigationMode ? -gunnerusHeading : 0
+          }deg) `,
+        }}
       >
-        {listPreviousPaths}
-        <GeoJson
-          key={"180"}
-          data={getGeoLine(cbfObject)}
-          styleCallback={(feature, hover) => {
-            return {
-              fill: "#00000000",
-              strokeWidth: "4",
-              opacity: 0.8,
-              stroke: 'red',
-              r: "20",
-            };
-          }}
-        />
-        {listArpa}
-        {listCourses}
-        {listVessels} 
-        {listTooltips}
-        {listMarkers}
-
-        <Overlay anchor={mapCenter} offset={[16, 44]}>
-          <img
-            className="overlay"
-            src={gunnerus}
-            style={{
-              transform: `rotate(${gunnerusHeading}deg) scale(${zoomScale})`,
+        <Map
+          defaultCenter={mapCenter}
+          defaultZoom={15}
+          center={mapCenter}
+          onBoundsChanged={handleZoomLevel}
+        >
+          {listPreviousPaths}
+          <GeoJson
+            key={"180"}
+            data={getGeoLine(cbfObject)}
+            styleCallback={(feature, hover) => {
+              return {
+                fill: "#00000000",
+                strokeWidth: "4",
+                opacity: 0.8,
+                stroke: "red",
+                r: "20",
+              };
             }}
           />
-        </Overlay>
-        <Marker key={0} color="red" width={markerSize} anchor={mapCenter} />
-        {draggable}
-      </Map>
+          {listArpa}
+          {listCourses}
+          {listVessels}
+          {listTooltips}
+          {listMarkers}
+
+          <Overlay anchor={mapCenter} offset={[16, 44]}>
+            <img
+              className="overlay"
+              src={gunnerus}
+              style={{
+                transform: `rotate(${gunnerusHeading}deg) scale(${zoomScale})`,
+              }}
+            />
+          </Overlay>
+          {maneuverCountdown}
+          <Marker key={0} color="red" width={markerSize} anchor={mapCenter}>
+            
+          </Marker>
+          {draggable}
+        </Map>
       </div>
-      </div>
+    </div>
   );
 };
 
