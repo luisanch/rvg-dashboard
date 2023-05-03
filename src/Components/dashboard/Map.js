@@ -27,8 +27,6 @@ const MyMap = (props) => {
   const arpaColor = "black";
   const courseColor = "orange";
   const previousPathColor = "blue";
-  
-  
 
   const [mapCenter, setMapCenter] = useState([63.43463, 10.39744]);
   const [gunnerusHeading, setGunnerusHeading] = useState(0);
@@ -167,7 +165,7 @@ const MyMap = (props) => {
       setCBFObject(data.data.cbf);
       const d = new Date();
       let time = d.getTime();
-      countdown = (Number(data.data.maneuver_start)  - (time / 1000));
+      countdown = Number(data.data.maneuver_start) - time / 1000;
     }
   }, [data, setMapCenter, setGunnerusHeading]);
 
@@ -177,13 +175,13 @@ const MyMap = (props) => {
         return Object.values(aisObject);
       });
 
-      console.log(countdown);
+      // console.log(countdown);
       countdown -= refreshInterval / 1000;
-      if (countdown < 0) countdown = -1; 
-      cleanupCoundownARPA -= refreshInterval
-      if (cleanupCoundownARPA < 0) setArpaObject([])
-      cleanupCoundownCBF -= refreshInterval
-      if (cleanupCoundownCBF < 0) setCBFObject([])
+      if (countdown < 0) countdown = -1;
+      cleanupCoundownARPA -= refreshInterval;
+      if (cleanupCoundownARPA < 0) setArpaObject([]);
+      cleanupCoundownCBF -= refreshInterval;
+      if (cleanupCoundownCBF < 0) setCBFObject([]);
       setCbftimer(countdown.toFixed(2));
     }, refreshInterval);
     return () => {
@@ -198,6 +196,7 @@ const MyMap = (props) => {
       aisObject[ais.mmsi]["pinTooltip"] = false;
       aisObject[ais.mmsi]["hoverTooltip"] = false;
     }
+    const hasArpa = arpaObject.hasOwnProperty(ais.mmsi);
 
     const formatString = (text, maxLength = 9) => {
       const stringText = String(text);
@@ -209,25 +208,31 @@ const MyMap = (props) => {
     };
 
     const tooltipText = (ais) => {
-      const hasArpa = arpaObject.hasOwnProperty(ais.mmsi);
+      
       const hasSafetyParams = hasArpa && arpaObject[ais.mmsi].safety_params;
 
       const lon = ais.lon;
       const lat = ais.lat;
-      const course = ais.hasOwnProperty("course") ? ais.course : "--";
+      const course = ais.hasOwnProperty("course") ? ais.course.toFixed(2) : "--";
       const mmsi = ais.mmsi;
-      const speed = ais.hasOwnProperty("speed") ? ais.speed : "--";
-      const d2cpa = hasArpa ? arpaObject[ais.mmsi]["d_2_cpa"] : "--";
-      const t2cpa = hasArpa ? arpaObject[ais.mmsi]["t_2_cpa"] : "--";
-      const dAtcpa = hasArpa ? arpaObject[ais.mmsi]["d_at_cpa"] : "--";
-      const t2r = hasSafetyParams ? arpaObject[ais.mmsi]["t_2_r"] : "--";
-      const d2r = hasSafetyParams ? arpaObject[ais.mmsi]["d_2_r"] : "--";
+      const speed = ais.hasOwnProperty("speed") ? ais.speed.toFixed(2) : "--";
+      const d2cpa = hasArpa ? Number(arpaObject[ais.mmsi]["d_2_cpa"]).toFixed(2) : "--";
+      const t2cpa = hasArpa ? Number(arpaObject[ais.mmsi]["t_2_cpa"]).toFixed(2) : "--";
+      const dAtcpa = hasArpa ? Number(arpaObject[ais.mmsi]["d_at_cpa"]).toFixed(2) : "--";
+      const t2r = hasSafetyParams ? Number(arpaObject[ais.mmsi]["t_2_r"]).toFixed(2) : "--";
+      const d2r = hasSafetyParams ? Number(arpaObject[ais.mmsi]["d_2_r"]).toFixed(2) : "--";
 
       function createData(parameter, value, unit) {
         return { parameter, value, unit };
       }
 
-      const rows = [
+      const rows = settings.shortTooltips? [
+        createData("t2CPA", formatString(t2cpa), "s"),
+        createData("D2CPA", formatString(d2cpa), "m"),
+        createData("D@CPA", formatString(dAtcpa), "m"),
+        createData("t2Sr", formatString(t2r), "s"),
+        createData("D2Sr", formatString(d2r), "m"),
+      ]: [
         createData("MMSI", mmsi, "#"),
         createData("Longitude", lon, "DD"),
         createData("Latitude", lat, "DD"),
@@ -244,16 +249,18 @@ const MyMap = (props) => {
         <TableContainer
           component={Paper}
           style={{
-            transform: `scale(${0.77}) `,
+            transform: `scale(${0.77})  rotate(${
+              settings.navigationMode ? gunnerusHeading : 0
+            }deg) `,
             opacity: 0.85,
           }}
         >
           <Table sx={{ maxWidth: 285 }} size="small" aria-label="a dense table">
             <TableHead>
               <TableRow>
-                <TableCell align="left">Parameter</TableCell>
-                <TableCell align="right">Value</TableCell>
-                <TableCell align="right">Units</TableCell>
+                <TableCell align="left">{settings.shortTooltips? "Par.": "Parameter"}</TableCell>
+                <TableCell align="right">{settings.shortTooltips? "Val.": "Value"}</TableCell>
+                <TableCell align="right">{settings.shortTooltips? "U.": "Units"}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -277,7 +284,7 @@ const MyMap = (props) => {
       <Overlay
         key={"6" + ais.mmsi}
         anchor={[ais.lat, ais.lon]}
-        offset={[30, 340]}
+        offset={settings.shortTooltips? [25, 190] : [30, 340]}
       >
         {tooltipText(ais)}
       </Overlay>
@@ -285,6 +292,7 @@ const MyMap = (props) => {
 
     const tooltip =
       aisObject[ais.mmsi]["hoverTooltip"] || aisObject[ais.mmsi].pinTooltip
+        || (settings.showAllTooltips && hasArpa)
         ? tooltipOverlay
         : null;
 
@@ -296,10 +304,6 @@ const MyMap = (props) => {
 
     return (
       <Marker
-        // style={{
-        //   transform: `rotate(${settings.navigationMode ? gunnerusHeading : 0
-        //     }deg) `,
-        // }}
         key={ais.mmsi}
         color="green"
         width={markerSize}
@@ -309,7 +313,6 @@ const MyMap = (props) => {
         }}
         onMouseOver={() => {
           aisObject[ais.mmsi]["hoverTooltip"] = true;
-          // console.log(aisObject[ais.mmsi]["hoverTooltip"]);
         }}
         onMouseOut={() => (aisObject[ais.mmsi]["hoverTooltip"] = false)}
         anchor={[Number(ais.lat), Number(ais.lon)]}
@@ -517,36 +520,40 @@ const MyMap = (props) => {
     </Draggable>
   ) : null;
 
-  const maneuverCountdown = countdown > 0 ? (
-    <Overlay key={"coundownoverlay"} anchor={mapCenter} offset={[100, -100]}>
-      <TableContainer
-        component={Paper}
-        key={"maneuvercountdowntable"}
-        style={{
-         
-          opacity: 0.85,
-        }}
-      >
-        <Table sx={{ maxWidth: 250 }} size="small" aria-label="a dense table">
-          <TableHead>
-            <TableRow>
-              <TableCell align="right">t. remain.</TableCell>
-              <TableCell align="left">unit</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow
-              key={"maneuverCountdownrow"}
-              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-            >
-              <TableCell align="right">{cbfTimer}</TableCell>
-              <TableCell align="left">s</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Overlay>
-  ) : null;
+  const maneuverCountdown =
+    countdown > 0 ? (
+      <Overlay key={"coundownoverlay"} anchor={mapCenter} offset={[100, -100]}>
+        <TableContainer
+          component={Paper}
+          key={"maneuvercountdowntable"}
+          style={{
+            transform: `rotate(${
+              settings.navigationMode ? gunnerusHeading : 0
+            }deg) `,
+
+            opacity: 0.85,
+          }}
+        >
+          <Table sx={{ maxWidth: 250 }} size="small" aria-label="a dense table">
+            <TableHead>
+              <TableRow>
+                <TableCell align="right">t. remain.</TableCell>
+                <TableCell align="left">unit</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              <TableRow
+                key={"maneuverCountdownrow"}
+                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+              >
+                <TableCell align="right">{cbfTimer}</TableCell>
+                <TableCell align="left">s</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Overlay>
+    ) : null;
 
   return (
     <div className="mapcontainer">
@@ -594,9 +601,12 @@ const MyMap = (props) => {
             />
           </Overlay>
           {maneuverCountdown}
-          <Marker key={0} color="red" width={markerSize} anchor={mapCenter}>
-            
-          </Marker>
+          <Marker
+            key={0}
+            color="red"
+            width={markerSize}
+            anchor={mapCenter}
+          ></Marker>
           {draggable}
         </Map>
       </div>

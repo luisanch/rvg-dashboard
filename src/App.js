@@ -20,7 +20,9 @@ function App() {
   const [settings, setSettings] = useState({
     showHitbox: true,
     showAllTooltips: false,
+    shortTooltips: true, 
     showDebugOverlay: false,
+    navigationMode: false,
   });
 
   const { sendMessage, lastMessage, readyState } = useWebSocket(WS_URL, {

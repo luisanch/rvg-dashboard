@@ -19,6 +19,10 @@ export default function Settings(props) {
     update('navigationMode', event.target.checked)
   };
 
+  const handleChangeShortTooltips = (event) => {
+    update('shortTooltips', event.target.checked)
+  };
+
   const handleChangeTooltips = (event) => {
     update('showAllTooltips', event.target.checked)
   };
@@ -30,6 +34,7 @@ export default function Settings(props) {
   return (
     <FormGroup>
       <FormControlLabel control={<Checkbox checked={settings.showHitbox} onChange={handleChangeHitbox} />} label="Show ARPA data" />
+      <FormControlLabel control={<Checkbox disabled={!settings.showHitbox} checked={settings.shortTooltips} onChange={handleChangeShortTooltips} />} label="Compact ARPA tooltips" />
       <FormControlLabel control={<Checkbox disabled={!settings.showHitbox} checked={settings.showAllTooltips} onChange={handleChangeTooltips} />} label="Always display ARPA tooltips" />
       <FormControlLabel control={<Checkbox checked={settings.showDebugOverlay} onChange={handleChangeOverlay} />} label="Show Debug Overlay" />
       <FormControlLabel control={<Checkbox checked={settings.navigationMode} onChange={handleChangeNavigation} />} label="Navigation Mode On" />
