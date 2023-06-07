@@ -227,11 +227,11 @@ const MyMap = (props) => {
       }
 
       const rows = settings.shortTooltips? [
-        createData("t2CPA", formatString(t2cpa), "s"),
+        createData("T2CPA", formatString(t2cpa), "s"),
         createData("D2CPA", formatString(d2cpa), "m"),
         createData("D@CPA", formatString(dAtcpa), "m"),
-        createData("t2Sr", formatString(t2r), "s"),
-        createData("D2Sr", formatString(d2r), "m"),
+        createData("T2R", formatString(t2r), "s"),
+        createData("D2R", formatString(d2r), "m"),
       ]: [
         createData("MMSI", mmsi, "#"),
         createData("Longitude", lon, "DD"),
@@ -241,8 +241,8 @@ const MyMap = (props) => {
         createData("T. to CPA", formatString(t2cpa), "s"),
         createData("Dist. to CPA", formatString(d2cpa), "m"),
         createData("Dist. at CPA", formatString(dAtcpa), "m"),
-        createData("T. to Saf. r", formatString(t2r), "s"),
-        createData("Dist. to Saf. r", formatString(d2r), "m"),
+        createData("T. to Saf. R", formatString(t2r), "s"),
+        createData("Dist. to Saf. R", formatString(d2r), "m"),
       ];
 
       return (
