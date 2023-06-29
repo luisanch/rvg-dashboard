@@ -10,6 +10,8 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import Stack from "@mui/material/Stack";
+import Slider from "@mui/material/Slider";
 import Paper from "@mui/material/Paper";
 import { maxHeight } from "@mui/system";
 
@@ -20,8 +22,12 @@ const cleanupInterval = 15000;
 let cleanupCoundownARPA = cleanupInterval;
 let cleanupCoundownCBF = cleanupInterval;
 
+// This definitely needs to be broken up into smaller components.
+// Pigeonmaps has a tendency to complain about wrapping components.
+
 const MyMap = (props) => {
   const data = props.data;
+  const sendMessage = props.sendMessage;
   const markerSize = 20;
   const settings = props.settings;
   const arpaColor = "black";
@@ -37,6 +43,16 @@ const MyMap = (props) => {
   const [cbfObject, setCBFObject] = useState([]);
   const [zoomScale, setZoomScale] = useState(1);
   const [cbfTimer, setCbftimer] = useState();
+  const [slider1Value, setSlider1Value] = useState(0);
+  const [slider2Value, setSlider2Value] = useState(0);
+
+  const handleSlider1Change = (event, newValue) => {
+    setSlider1Value(newValue);
+  };
+
+  const handleSlider2Change = (event, newValue) => {
+    setSlider2Value(newValue);
+  };
 
   const handleZoomLevel = (event) => {
     const scale = event.zoom / (2 * 18);
@@ -208,42 +224,55 @@ const MyMap = (props) => {
     };
 
     const tooltipText = (ais) => {
-      
       const hasSafetyParams = hasArpa && arpaObject[ais.mmsi].safety_params;
 
       const lon = ais.lon;
       const lat = ais.lat;
-      const course = ais.hasOwnProperty("course") ? ais.course.toFixed(2) : "--";
+      const course = ais.hasOwnProperty("course")
+        ? ais.course.toFixed(2)
+        : "--";
       const mmsi = ais.mmsi;
       const speed = ais.hasOwnProperty("speed") ? ais.speed.toFixed(2) : "--";
-      const d2cpa = hasArpa ? Number(arpaObject[ais.mmsi]["d_2_cpa"]).toFixed(2) : "--";
-      const t2cpa = hasArpa ? Number(arpaObject[ais.mmsi]["t_2_cpa"]).toFixed(2) : "--";
-      const dAtcpa = hasArpa ? Number(arpaObject[ais.mmsi]["d_at_cpa"]).toFixed(2) : "--";
-      const t2r = hasSafetyParams ? Number(arpaObject[ais.mmsi]["t_2_r"]).toFixed(2) : "--";
-      const d2r = hasSafetyParams ? Number(arpaObject[ais.mmsi]["d_2_r"]).toFixed(2) : "--";
+      const d2cpa = hasArpa
+        ? Number(arpaObject[ais.mmsi]["d_2_cpa"]).toFixed(2)
+        : "--";
+      const t2cpa = hasArpa
+        ? Number(arpaObject[ais.mmsi]["t_2_cpa"]).toFixed(2)
+        : "--";
+      const dAtcpa = hasArpa
+        ? Number(arpaObject[ais.mmsi]["d_at_cpa"]).toFixed(2)
+        : "--";
+      const t2r = hasSafetyParams
+        ? Number(arpaObject[ais.mmsi]["t_2_r"]).toFixed(2)
+        : "--";
+      const d2r = hasSafetyParams
+        ? Number(arpaObject[ais.mmsi]["d_2_r"]).toFixed(2)
+        : "--";
 
       function createData(parameter, value, unit) {
         return { parameter, value, unit };
       }
 
-      const rows = settings.shortTooltips? [
-        createData("T2CPA", formatString(t2cpa), "s"),
-        createData("D2CPA", formatString(d2cpa), "m"),
-        createData("D@CPA", formatString(dAtcpa), "m"),
-        createData("T2R", formatString(t2r), "s"),
-        createData("D2R", formatString(d2r), "m"),
-      ]: [
-        createData("MMSI", mmsi, "#"),
-        createData("Longitude", lon, "DD"),
-        createData("Latitude", lat, "DD"),
-        createData("Course", course, "°"),
-        createData("Speed", speed, "kn"),
-        createData("T. to CPA", formatString(t2cpa), "s"),
-        createData("Dist. to CPA", formatString(d2cpa), "m"),
-        createData("Dist. at CPA", formatString(dAtcpa), "m"),
-        createData("T. to Saf. R", formatString(t2r), "s"),
-        createData("Dist. to Saf. R", formatString(d2r), "m"),
-      ];
+      const rows = settings.shortTooltips
+        ? [
+            createData("T2CPA", formatString(t2cpa), "s"),
+            createData("D2CPA", formatString(d2cpa), "m"),
+            createData("D@CPA", formatString(dAtcpa), "m"),
+            createData("T2R", formatString(t2r), "s"),
+            createData("D2R", formatString(d2r), "m"),
+          ]
+        : [
+            createData("MMSI", mmsi, "#"),
+            createData("Longitude", lon, "DD"),
+            createData("Latitude", lat, "DD"),
+            createData("Course", course, "°"),
+            createData("Speed", speed, "kn"),
+            createData("T. to CPA", formatString(t2cpa), "s"),
+            createData("Dist. to CPA", formatString(d2cpa), "m"),
+            createData("Dist. at CPA", formatString(dAtcpa), "m"),
+            createData("T. to Saf. R", formatString(t2r), "s"),
+            createData("Dist. to Saf. R", formatString(d2r), "m"),
+          ];
 
       return (
         <TableContainer
@@ -258,9 +287,15 @@ const MyMap = (props) => {
           <Table sx={{ maxWidth: 285 }} size="small" aria-label="a dense table">
             <TableHead>
               <TableRow>
-                <TableCell align="left">{settings.shortTooltips? "Par.": "Parameter"}</TableCell>
-                <TableCell align="right">{settings.shortTooltips? "Val.": "Value"}</TableCell>
-                <TableCell align="right">{settings.shortTooltips? "U.": "Units"}</TableCell>
+                <TableCell align="left">
+                  {settings.shortTooltips ? "Par." : "Parameter"}
+                </TableCell>
+                <TableCell align="right">
+                  {settings.shortTooltips ? "Val." : "Value"}
+                </TableCell>
+                <TableCell align="right">
+                  {settings.shortTooltips ? "U." : "Units"}
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -284,15 +319,16 @@ const MyMap = (props) => {
       <Overlay
         key={"6" + ais.mmsi}
         anchor={[ais.lat, ais.lon]}
-        offset={settings.shortTooltips? [25, 190] : [30, 340]}
+        offset={settings.shortTooltips ? [25, 190] : [30, 340]}
       >
         {tooltipText(ais)}
       </Overlay>
     );
 
     const tooltip =
-      aisObject[ais.mmsi]["hoverTooltip"] || aisObject[ais.mmsi].pinTooltip
-        || (settings.showAllTooltips && hasArpa)
+      aisObject[ais.mmsi]["hoverTooltip"] ||
+      aisObject[ais.mmsi].pinTooltip ||
+      (settings.showAllTooltips && hasArpa)
         ? tooltipOverlay
         : null;
 
@@ -520,6 +556,30 @@ const MyMap = (props) => {
     </Draggable>
   ) : null;
 
+  const controls = settings.showSimControls ? (
+    <div className="slider-container">
+    <div className="slider-wrapper">
+      <div className="slider-label">Azimuth Angle: {slider1Value}</div>
+      <Slider
+        value={slider1Value}
+        min={-30}
+        max={30}
+        onChange={handleSlider1Change}
+        aria-labelledby="slider1"
+      />
+      <div className="slider-label">Thruster Revs: {slider2Value}</div>
+      <Slider
+        value={slider2Value}
+        min={0}
+        max={300}
+        onChange={handleSlider2Change}
+        aria-labelledby="slider2"
+      />
+    </div>
+  </div>
+  
+  ) : null;
+
   const maneuverCountdown =
     countdown > 0 ? (
       <Overlay key={"coundownoverlay"} anchor={mapCenter} offset={[100, -100]}>
@@ -610,6 +670,7 @@ const MyMap = (props) => {
           {draggable}
         </Map>
       </div>
+      {controls}
     </div>
   );
 };

@@ -4,40 +4,96 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 
 export default function Settings(props) {
-  const settings = props.settings
-  const setSettings = props.setSettings 
+  const setSettings = props.setSettings;
+  const settings = props.settings;
 
   const handleChangeHitbox = (event) => {
-    update('showHitbox', event.target.checked) 
+    update("showHitbox", event.target.checked);
   };
 
   const handleChangeOverlay = (event) => {
-    update('showDebugOverlay', event.target.checked)
+    update("showDebugOverlay", event.target.checked);
   };
 
   const handleChangeNavigation = (event) => {
-    update('navigationMode', event.target.checked)
+    update("navigationMode", event.target.checked);
   };
 
   const handleChangeShortTooltips = (event) => {
-    update('shortTooltips', event.target.checked)
+    update("shortTooltips", event.target.checked);
   };
 
   const handleChangeTooltips = (event) => {
-    update('showAllTooltips', event.target.checked)
+    update("showAllTooltips", event.target.checked);
+  };
+
+  const handleShowSimControls = (event) => {
+    update("showSimControls", event.target.checked);
   };
 
   const update = (setting, value) => {
-    settings[setting] = value
-    setSettings(settings)
-  }
+    settings[setting] = value;
+    setSettings(settings);
+  };
+
   return (
     <FormGroup>
-      <FormControlLabel control={<Checkbox checked={settings.showHitbox} onChange={handleChangeHitbox} />} label="Show ARPA data" />
-      <FormControlLabel control={<Checkbox disabled={!settings.showHitbox} checked={settings.shortTooltips} onChange={handleChangeShortTooltips} />} label="Compact ARPA tooltips" />
-      <FormControlLabel control={<Checkbox disabled={!settings.showHitbox} checked={settings.showAllTooltips} onChange={handleChangeTooltips} />} label="Always display ARPA tooltips" />
-      <FormControlLabel control={<Checkbox checked={settings.showDebugOverlay} onChange={handleChangeOverlay} />} label="Show Debug Overlay" />
-      <FormControlLabel control={<Checkbox checked={settings.navigationMode} onChange={handleChangeNavigation} />} label="Navigation Mode On" />
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={settings.showHitbox}
+            onChange={handleChangeHitbox}
+          />
+        }
+        label="Show ARPA data"
+      />
+      <FormControlLabel
+        control={
+          <Checkbox
+            disabled={!settings.showHitbox}
+            checked={settings.shortTooltips}
+            onChange={handleChangeShortTooltips}
+          />
+        }
+        label="Compact ARPA tooltips"
+      />
+      <FormControlLabel
+        control={
+          <Checkbox
+            disabled={!settings.showHitbox}
+            checked={settings.showAllTooltips}
+            onChange={handleChangeTooltips}
+          />
+        }
+        label="Always display ARPA tooltips"
+      />
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={settings.showDebugOverlay}
+            onChange={handleChangeOverlay}
+          />
+        }
+        label="Show Debug Overlay"
+      />
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={settings.navigationMode}
+            onChange={handleChangeNavigation}
+          />
+        }
+        label="Navigation Mode On"
+      />
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={settings.showSimControls}
+            onChange={handleShowSimControls}
+          />
+        }
+        label="Show Sim. Controls"
+      />
     </FormGroup>
   );
 }

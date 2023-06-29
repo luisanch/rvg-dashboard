@@ -6,23 +6,28 @@ import Home from "./Pages/Home";
 import Settings from "./Pages/Settings";
 import Statistics from "./Pages/Statistics";
 import useWebSocket, { ReadyState } from "react-use-websocket";
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react"; 
 
 const WS_URL = "ws://127.0.0.1:8000";
 let messageHistory = [];
+// let stampArray = [];
+// let timerStart = Date.now()/1000;
+// let hourtag = 1;
 
 function App() {
   const nmeaFilters = ["$GPGGA_ext", "$PSIMSNS_ext"];
   const aisFilter = "!AI";
   const colavFilter = "arpa";
-  const cbfFilter = "cbf"
+  const cbfFilter = "cbf";
   const maxBufferLength = 60;
+  // const saveInterval = 3600;
   const [settings, setSettings] = useState({
     showHitbox: true,
     showAllTooltips: false,
-    shortTooltips: true, 
+    shortTooltips: true,
     showDebugOverlay: false,
     navigationMode: false,
+    showSimControls: false,
   });
 
   const { sendMessage, lastMessage, readyState } = useWebSocket(WS_URL, {
@@ -48,11 +53,24 @@ function App() {
 
   function parseDataIn(msgString) {
     const msg = JSON.parse(msgString).data;
+
     if (
       nmeaFilters.includes(msg.message_id) ||
       (msg.message_id.includes(aisFilter) && msg.message_id.includes("_ext")) ||
-      msg.message_id.includes(colavFilter) || msg.message_id.includes(cbfFilter)
+      msg.message_id.includes(colavFilter) ||
+      msg.message_id.includes(cbfFilter)
     ) {
+      // const currDate = Date.now() / 1000;
+      // if (currDate > (timerStart + saveInterval)) {
+      //   const logname = "hour" + hourtag + "log"
+      //   localStorage.setItem(logname, JSON.stringify(stampArray, null, 2))
+      //   hourtag++
+      //   stampArray = []
+      //   timerStart = Date.now() / 1000
+      //   console.log("new log saved")
+      // } else {
+      //   stampArray.push(Date.now() / 1000 - msg.unix_time)
+      // }
       return msg;
     } else {
       return null;
@@ -74,7 +92,13 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={<Home settings={settings} data={messageHistory[messageHistory.length - 1]} />}
+            element={
+              <Home
+                settings={settings}
+                sendMessage={sendMessage}
+                data={messageHistory[messageHistory.length - 1]}
+              />
+            }
           />
           <Route path="/explore" element={<Explore />} />
           <Route
@@ -86,7 +110,10 @@ function App() {
               />
             }
           />
-          <Route path="/settings" element={<Settings settings={settings} setSettings={setSettings} />} />
+          <Route
+            path="/settings"
+            element={<Settings settings={settings} setSettings={setSettings} />}
+          />
         </Routes>
       </main>
     </div>
