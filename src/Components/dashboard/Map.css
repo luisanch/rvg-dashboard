@@ -8,11 +8,11 @@
 
 .map { 
   position: relative;
-  left: -50vw;
-  top: -50vh;
+  left: -75vw;
+  top: -75vh;
   background-color: black;
-  height: 200vh;
-  width: 200vw;  
+  height: 250vh;
+  width: 250vw;  
 }
 
 .overlay{

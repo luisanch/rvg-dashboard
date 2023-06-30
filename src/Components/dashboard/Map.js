@@ -48,10 +48,27 @@ const MyMap = (props) => {
 
   const handleSlider1Change = (event, newValue) => {
     setSlider1Value(newValue);
+    const message = {
+      type: "datain",
+      content: {
+        message_id: "control_azi",
+        val: newValue,
+      },
+    };
+    sendMessage(JSON.stringify(message, null, 2));
+    console.log(message);
   };
 
   const handleSlider2Change = (event, newValue) => {
-    setSlider2Value(newValue);
+    setSlider2Value(newValue); 
+    const message = {
+      type: "datain",
+      content: {
+        message_id: "control_thrust",
+        val: newValue,
+      },
+    };
+    sendMessage(JSON.stringify(message, null, 2));
   };
 
   const handleZoomLevel = (event) => {
@@ -558,26 +575,25 @@ const MyMap = (props) => {
 
   const controls = settings.showSimControls ? (
     <div className="slider-container">
-    <div className="slider-wrapper">
-      <div className="slider-label">Azimuth Angle: {slider1Value}</div>
-      <Slider
-        value={slider1Value}
-        min={-30}
-        max={30}
-        onChange={handleSlider1Change}
-        aria-labelledby="slider1"
-      />
-      <div className="slider-label">Thruster Revs: {slider2Value}</div>
-      <Slider
-        value={slider2Value}
-        min={0}
-        max={300}
-        onChange={handleSlider2Change}
-        aria-labelledby="slider2"
-      />
+      <div className="slider-wrapper">
+        <div className="slider-label">Azimuth Angle: {slider1Value}</div>
+        <Slider
+          value={slider1Value}
+          min={-30}
+          max={30}
+          onChange={handleSlider1Change}
+          aria-labelledby="slider1"
+        />
+        <div className="slider-label">Thruster Revs: {slider2Value}</div>
+        <Slider
+          value={slider2Value}
+          min={0}
+          max={300}
+          onChange={handleSlider2Change}
+          aria-labelledby="slider2"
+        />
+      </div>
     </div>
-  </div>
-  
   ) : null;
 
   const maneuverCountdown =

@@ -6,5 +6,5 @@ export default function Home(props) {
   const settings = props.settings;
   const sendMessage = props.sendMessage;
   
-  return <MyMap data={data} settings={settings} />;
+  return <MyMap data={data} settings={settings} sendMessage={sendMessage}/>;
 }
