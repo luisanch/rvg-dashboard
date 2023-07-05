@@ -8,7 +8,7 @@ import Statistics from "./Pages/Statistics";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import React, { useState, useCallback, useEffect } from "react"; 
 
-const WS_URL = "ws://127.0.0.1:8000";
+const WS_URL = "ws://10.24.47.2:8000";
 let messageHistory = [];
 // let stampArray = [];
 // let timerStart = Date.now()/1000;
