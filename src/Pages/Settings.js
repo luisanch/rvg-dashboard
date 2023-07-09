@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import FormGroup from "@mui/material/FormGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
+import { FormControl, InputLabel, Select, MenuItem, FormHelperText } from "@mui/material";
 
 export default function Settings(props) {
-  const setSettings = props.setSettings;
-  const settings = props.settings;
+  const setAppSettings = props.setSettings
+  const [settings, setSettings] = useState(props.settings);
+  const sendMessage = props.sendMessage;
 
   const handleChangeHitbox = (event) => {
     update("showHitbox", event.target.checked);
@@ -31,9 +33,23 @@ export default function Settings(props) {
     update("showSimControls", event.target.checked);
   };
 
-  const update = (setting, value) => {
-    settings[setting] = value;
-    setSettings(settings);
+  const handleSimMode = (event) => {
+    update("simMode", event.target.value);
+    const message = {
+      type: "datain",
+      content: {
+        message_id: "data_mode",
+        val: event.target.value,
+      },
+    };
+    sendMessage(JSON.stringify(message, null, 2));
+  };
+
+  const update = (setting, value) => { 
+    let newSettings = props.settings
+    newSettings[setting] = value
+    setSettings(newSettings);
+    setAppSettings(newSettings); 
   };
 
   return (
@@ -41,6 +57,7 @@ export default function Settings(props) {
       <FormControlLabel
         control={
           <Checkbox
+            id="hitbox"
             checked={settings.showHitbox}
             onChange={handleChangeHitbox}
           />
@@ -50,6 +67,7 @@ export default function Settings(props) {
       <FormControlLabel
         control={
           <Checkbox
+            id="compacttooltips"
             disabled={!settings.showHitbox}
             checked={settings.shortTooltips}
             onChange={handleChangeShortTooltips}
@@ -60,6 +78,7 @@ export default function Settings(props) {
       <FormControlLabel
         control={
           <Checkbox
+            id="alwaysdisptootltips"
             disabled={!settings.showHitbox}
             checked={settings.showAllTooltips}
             onChange={handleChangeTooltips}
@@ -70,6 +89,7 @@ export default function Settings(props) {
       <FormControlLabel
         control={
           <Checkbox
+            id="showdebugoverlay"
             checked={settings.showDebugOverlay}
             onChange={handleChangeOverlay}
           />
@@ -79,6 +99,7 @@ export default function Settings(props) {
       <FormControlLabel
         control={
           <Checkbox
+            id="navmodeon"
             checked={settings.navigationMode}
             onChange={handleChangeNavigation}
           />
@@ -88,12 +109,24 @@ export default function Settings(props) {
       <FormControlLabel
         control={
           <Checkbox
+            id="showsimcontrols"
             checked={settings.showSimControls}
             onChange={handleShowSimControls}
           />
         }
         label="Show Sim. Controls"
       />
+      <FormControl sx={{ m: 1, minWidth: 120 }} size="small"> 
+        <Select
+          labelId="simMode-label"
+          value={settings.simMode}
+          onChange={handleSimMode}
+        >
+          <MenuItem value={"4dof"}>4 DOF Sim.</MenuItem>
+          <MenuItem value={"rt"}>Real Time</MenuItem>
+        </Select>
+        <FormHelperText>Data Mode</FormHelperText>
+      </FormControl>
     </FormGroup>
   );
 }

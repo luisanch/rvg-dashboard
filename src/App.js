@@ -8,7 +8,7 @@ import Statistics from "./Pages/Statistics";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import React, { useState, useCallback, useEffect } from "react"; 
 
-const WS_URL = "ws://10.24.47.2:8000";
+const WS_URL = "ws://127.0.0.1:8000";
 let messageHistory = [];
 // let stampArray = [];
 // let timerStart = Date.now()/1000;
@@ -23,11 +23,12 @@ function App() {
   // const saveInterval = 3600;
   const [settings, setSettings] = useState({
     showHitbox: true,
-    showAllTooltips: false,
+    showAllTooltips: true,
     shortTooltips: true,
     showDebugOverlay: false,
     navigationMode: false,
     showSimControls: false,
+    simMode: "4dof",
   });
 
   const { sendMessage, lastMessage, readyState } = useWebSocket(WS_URL, {
@@ -112,7 +113,7 @@ function App() {
           />
           <Route
             path="/settings"
-            element={<Settings settings={settings} setSettings={setSettings} />}
+            element={<Settings settings={settings} setSettings={setSettings} sendMessage={sendMessage}/>}
           />
         </Routes>
       </main>
